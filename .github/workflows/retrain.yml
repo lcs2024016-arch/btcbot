@@ -1,0 +1,39 @@
+# Monthly: add last month's Binance candles, re-run the walk-forward backtest, retrain the live model.
+name: retrain
+
+on:
+  schedule:
+    - cron: "0 3 1 * *"        # 1st of each month, 03:00 UTC = 08:30 IST (before London)
+  workflow_dispatch:
+
+concurrency:
+  group: forward-test
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Update data, backtest, retrain
+        env:
+          LOKY_MAX_CPU_COUNT: "2"
+        run: |
+          python train.py --walkforward
+          python report.py
+      - name: Commit
+        run: |
+          git config user.name "forward-test-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data model charts README.md
+          git commit -m "monthly retrain $(TZ=Asia/Kolkata date '+%d %b %Y %H:%M IST')" || exit 0
+          git pull --rebase -X theirs && git push

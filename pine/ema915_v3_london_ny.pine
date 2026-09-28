@@ -1,0 +1,269 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © uzairblaoch - 9/15 EMA Scalper Strategy v3 (original)
+// Forward-test edition: London + New York in IST, Monday-Friday, exit within 25 min (Delta fee-free < 30 min),
+// 1% risk sized in Delta India lots (0.001 BTC), orders enabled. Matches the bot's "No ML" account.
+// Use on a 5-minute chart: BINANCE:BTCUSDT.P or DELTAIN:BTCUSD.P
+//@version=5
+// initial_capital 17.65 USD = Rs 1,500 at Delta India's fixed Rs 85 / USD
+// commission 0: every trade closes within 30 min, which Delta India does not charge
+// margin 1% (100x) so 1%-risk sizing with tight stops is not cut down by the margin check
+strategy("9/15 EMA Scalper v3 - London/NY IST", "9-15 EMA v3 IST", overlay=true, max_labels_count=500,
+         initial_capital=17.65, currency=currency.USD,
+         default_qty_type=strategy.fixed, default_qty_value=0.001,
+         commission_type=strategy.commission.percent, commission_value=0.0,
+         slippage=0, pyramiding=0, margin_long=1, margin_short=1,
+         process_orders_on_close=false)
+
+//========================
+// INPUTS
+//========================
+fastLen        = input.int(9,  "Fast EMA", group="EMA Settings")
+slowLen        = input.int(15, "Slow EMA", group="EMA Settings")
+angleLookback  = input.int(3, "EMA angle lookback (bars)", minval=1, maxval=10, group="EMA Settings")
+minSlopePts    = input.float(0.3, "Min EMA9 slope (points)", minval=0.05, group="EMA Settings")
+minEmaGap      = input.float(0.5, "Min EMA gap (points)", minval=0.0, group="EMA Settings")
+
+rr             = input.float(2.0, "Reward : Risk (TP)", minval=0.5, step=0.5, group="Risk Management")
+slBufPts       = input.float(1.0, "SL/TP tolerance (points)", minval=0.0, group="Risk Management")
+maxTradeBars   = input.int(4, "Close after N bars (4 on 5m = exit 25 min after entry)", minval=1, group="Risk Management")
+riskPercent    = input.float(1.0, "Risk % per trade", minval=0.1, maxval=10, step=0.1, group="Risk Management")
+useLots        = input.bool(true, "Round size to Delta lots (0.001 BTC)", group="Risk Management")
+lotSize        = input.float(0.001, "Lot size (BTC)", group="Risk Management")
+maxRiskPct     = input.float(2.0, "Max risk % when rounding up to 1 lot", group="Risk Management")
+
+bodyMinRatio   = input.float(0.6, "Min body % of candle (0-1)", minval=0.1, maxval=0.9, group="Candle Filters")
+oppWickMax     = input.float(0.3, "Max opposite wick % (0-1)", minval=0.05, maxval=0.9, group="Candle Filters")
+
+bigBodyMult    = input.float(2.0, "Big candle: body > avgBody *", minval=1.0, maxval=5.0, group="FVG Settings")
+retraceMin     = input.float(0.3, "FVG min retrace %", minval=0.0, maxval=1.0, group="FVG Settings")
+retraceMax     = input.float(0.7, "FVG max retrace %", minval=0.0, maxval=1.0, group="FVG Settings")
+fvgMode        = input.string("Conservative", "FVG Entry Mode", options=["Conservative", "Aggressive"], group="FVG Settings")
+
+// Sessions in Indian Standard Time; ":23456" = Monday-Friday (1 = Sunday)
+londonSess     = input.session("1330-1730:23456", "London (IST)", group="Sessions (IST)")
+nySess         = input.session("1830-2230:23456", "New York (IST)", group="Sessions (IST)")
+useLondon      = input.bool(true, "Trade London", group="Sessions (IST)")
+useNY          = input.bool(true, "Trade New York", group="Sessions (IST)")
+tz             = "Asia/Kolkata"
+
+useHTFBias     = input.bool(true, "Enable HTF Bias Filter", group="HTF Analysis")
+htfTimeframe   = input.timeframe("60", "HTF Timeframe", group="HTF Analysis")
+htfEMAFast     = input.int(9, "HTF Fast EMA", minval=5, group="HTF Analysis")
+htfEMASlow     = input.int(15, "HTF Slow EMA", minval=10, group="HTF Analysis")
+htfSlopeLen    = input.int(5, "HTF Slope Lookback", minval=1, maxval=20, group="HTF Analysis")
+htfMinSlope    = input.float(0.5, "HTF Min Slope (points)", minval=0.0, group="HTF Analysis")
+
+showLabels     = input.bool(false, "Show trade labels", group="Display")
+showDashboard  = input.bool(true, "Show dashboard", group="Display")
+
+//========================
+// SESSION FILTER (IST, Mon-Fri)
+//========================
+inLondon  = not na(time(timeframe.period, londonSess, tz))
+inNY      = not na(time(timeframe.period, nySess, tz))
+inSession = (useLondon and inLondon) or (useNY and inNY)
+
+bgcolor(inLondon ? color.new(color.blue, 93) : inNY ? color.new(color.orange, 93) : na, title="Session")
+
+//========================
+// HIGHER TIMEFRAME BIAS
+//========================
+htfEMAFastValue = request.security(syminfo.tickerid, htfTimeframe, ta.ema(close, htfEMAFast), lookahead=barmerge.lookahead_off)
+htfEMASlowValue = request.security(syminfo.tickerid, htfTimeframe, ta.ema(close, htfEMASlow), lookahead=barmerge.lookahead_off)
+htfClose        = request.security(syminfo.tickerid, htfTimeframe, close, lookahead=barmerge.lookahead_off)
+htfEMAFastPrev  = request.security(syminfo.tickerid, htfTimeframe, ta.ema(close[htfSlopeLen], htfEMAFast), lookahead=barmerge.lookahead_off)
+htfSlope   = htfEMAFastValue - htfEMAFastPrev
+htfBullish = htfEMAFastValue > htfEMASlowValue and htfSlope > htfMinSlope and htfClose > htfEMAFastValue
+htfBearish = htfEMAFastValue < htfEMASlowValue and htfSlope < -htfMinSlope and htfClose < htfEMAFastValue
+
+f_htfBiasOK(isBuy) =>
+    not useHTFBias or (isBuy ? htfBullish : htfBearish)
+
+//========================
+// EMAs & CANDLES
+//========================
+emaFast = ta.ema(close, fastLen)
+emaSlow = ta.ema(close, slowLen)
+plot(emaFast, color=color.new(color.blue, 0), title="EMA 9")
+plot(emaSlow, color=color.new(color.red, 0), title="EMA 15")
+
+f_body(o, c) => math.abs(c - o)
+f_rng(h, l) => h - l
+
+body    = f_body(open, close)
+avgBody = ta.sma(body, 20)
+
+f_strongBull(o, c, h, l) =>
+    f_rng(h, l) > 0 and c > o and f_body(o, c) / f_rng(h, l) >= bodyMinRatio and (h - math.max(o, c)) <= f_rng(h, l) * oppWickMax
+
+f_strongBear(o, c, h, l) =>
+    f_rng(h, l) > 0 and c < o and f_body(o, c) / f_rng(h, l) >= bodyMinRatio and (math.min(o, c) - l) <= f_rng(h, l) * oppWickMax
+
+slopeFast = emaFast - emaFast[angleLookback]
+gapFast   = math.abs(emaFast - emaSlow)
+upTrend   = emaFast > emaSlow and slopeFast > minSlopePts and gapFast > minEmaGap
+downTrend = emaFast < emaSlow and slopeFast < -minSlopePts and gapFast > minEmaGap
+
+cMin = math.min(open, close)
+cMax = math.max(open, close)
+emaTouchAny = (cMin <= emaFast and cMax >= emaFast) or (cMin <= emaSlow and cMax >= emaSlow)
+
+isBullEngulf = close > open and close > high[1] and open < low[1] and emaTouchAny
+isBearEngulf = close < open and close < low[1] and open > high[1] and emaTouchAny
+isBullPin = close > open and f_rng(high, low) > 0 and (open - low) > (high - close) * 2.0 and (open - low) / f_rng(high, low) >= 0.6 and low <= emaFast and emaFast <= cMax
+isBearPin = close < open and f_rng(high, low) > 0 and (high - close) > (open - low) * 2.0 and (high - close) / f_rng(high, low) >= 0.6 and cMin <= emaFast and emaFast <= high
+
+isDispBull = body > avgBody * bigBodyMult and f_strongBull(open, close, high, low) and emaTouchAny and upTrend
+isDispBear = body > avgBody * bigBodyMult and f_strongBear(open, close, high, low) and emaTouchAny and downTrend
+
+//========================
+// FVG STATE
+//========================
+var bool  waitingBullFVG = false
+var bool  waitingBearFVG = false
+var float bullH0 = na
+var float bullL0 = na
+var float bearH0 = na
+var float bearL0 = na
+var int   bullBarIndex = na
+var int   bearBarIndex = na
+
+if isDispBull and strategy.position_size == 0
+    waitingBullFVG := true
+    bullH0 := high
+    bullL0 := low
+    bullBarIndex := bar_index
+
+if isDispBear and strategy.position_size == 0
+    waitingBearFVG := true
+    bearH0 := high
+    bearL0 := low
+    bearBarIndex := bar_index
+
+if waitingBullFVG and bar_index > bullBarIndex + 1
+    waitingBullFVG := false
+if waitingBearFVG and bar_index > bearBarIndex + 1
+    waitingBearFVG := false
+
+bool  fvgBuySignal  = false
+bool  fvgSellSignal = false
+float fvgBuyEntry   = na
+float fvgSellEntry  = na
+float fvgBuySL      = na
+float fvgSellSL     = na
+
+if waitingBullFVG and strategy.position_size == 0 and bar_index == bullBarIndex + 1
+    bullR        = bullH0 - bullL0
+    bullZoneLow  = bullH0 - bullR * retraceMax
+    bullZoneHigh = bullH0 - bullR * retraceMin
+    touchAgg     = low <= bullZoneHigh and high >= bullZoneLow
+    touchCons    = touchAgg and low > bullL0
+    if fvgMode == "Aggressive" ? touchAgg : touchCons
+        fvgBuySignal := true
+        fvgBuyEntry  := math.max(bullZoneLow, low)
+        fvgBuySL     := bullL0
+    waitingBullFVG := false
+
+if waitingBearFVG and strategy.position_size == 0 and bar_index == bearBarIndex + 1
+    bearR        = bearH0 - bearL0
+    bearZoneLow  = bearL0 + bearR * retraceMin
+    bearZoneHigh = bearL0 + bearR * retraceMax
+    touchAgg     = high >= bearZoneLow and low <= bearZoneHigh
+    touchCons    = touchAgg and high < bearH0
+    if fvgMode == "Aggressive" ? touchAgg : touchCons
+        fvgSellSignal := true
+        fvgSellEntry  := math.min(bearZoneHigh, high)
+        fvgSellSL     := bearH0
+    waitingBearFVG := false
+
+//========================
+// NORMAL SIGNALS
+//========================
+emaInBody  = cMin <= emaFast and cMax >= emaFast
+normalBuy  = upTrend and emaInBody and (f_strongBull(open, close, high, low) or isBullPin or isBullEngulf) and not isDispBull
+normalSell = downTrend and emaInBody and (f_strongBear(open, close, high, low) or isBearPin or isBearEngulf) and not isDispBear
+
+//========================
+// POSITION SIZING (1% risk, Delta lots)
+//========================
+f_qty(entry, sl) =>
+    dist = math.abs(entry - sl)
+    float q = 0.0
+    if dist > 0
+        q := strategy.equity * riskPercent / 100 / dist
+        if useLots
+            q := math.floor(q / lotSize) * lotSize
+            if q < lotSize and lotSize * dist <= strategy.equity * maxRiskPct / 100
+                q := lotSize
+    q
+
+//========================
+// ORDERS (one per bar, priority: normal long, normal short, FVG long, FVG short)
+//========================
+f_order(isLong, e, sl, tag) =>
+    r   = isLong ? e - sl : sl - e
+    tp  = isLong ? e + r * rr : e - r * rr
+    qty = f_qty(e, sl)
+    placed = false
+    if qty > 0 and r > 0
+        strategy.entry(tag, isLong ? strategy.long : strategy.short, qty=qty)
+        strategy.exit(tag + " Exit", tag, stop=isLong ? sl + slBufPts : sl - slBufPts, limit=isLong ? tp - slBufPts : tp + slBufPts)
+        if showLabels
+            label.new(bar_index, sl, (isLong ? "BUY " : "SELL ") + tag + "\nSL " + str.tostring(sl, format.mintick) + "\nTP " + str.tostring(tp, format.mintick) + "\nQty " + str.tostring(qty),
+                      style=isLong ? label.style_label_up : label.style_label_down, color=isLong ? color.green : color.red, textcolor=color.white, size=size.tiny)
+        placed := true
+    placed
+
+flat = strategy.position_size == 0
+if flat and inSession
+    done = false
+    if normalBuy and f_htfBiasOK(true)
+        done := f_order(true, close, low, "Long")
+    if not done and normalSell and f_htfBiasOK(false)
+        done := f_order(false, close, high, "Short")
+    if not done and fvgBuySignal and f_htfBiasOK(true)
+        done := f_order(true, fvgBuyEntry, fvgBuySL, "Long FVG")
+    if not done and fvgSellSignal and f_htfBiasOK(false)
+        done := f_order(false, fvgSellEntry, fvgSellSL, "Short FVG")
+
+//========================
+// TIME EXIT (close_all at the close of fill bar + N -> fills at the next open)
+//========================
+var int entryBarIndex = na
+if strategy.position_size != 0 and na(entryBarIndex)
+    entryBarIndex := bar_index
+if strategy.position_size != 0 and not na(entryBarIndex) and bar_index - entryBarIndex >= maxTradeBars
+    strategy.close_all("Time exit")
+    entryBarIndex := na
+if strategy.position_size == 0
+    entryBarIndex := na
+
+//========================
+// DASHBOARD
+//========================
+plotshape((normalBuy or fvgBuySignal) and flat and inSession and f_htfBiasOK(true), title="Buy", style=shape.triangleup, location=location.belowbar, size=size.tiny, color=color.new(color.green, 20))
+plotshape((normalSell or fvgSellSignal) and flat and inSession and f_htfBiasOK(false), title="Sell", style=shape.triangledown, location=location.abovebar, size=size.tiny, color=color.new(color.red, 20))
+
+if showDashboard and barstate.islast
+    var table dash = table.new(position.top_right, 2, 9, border_width=1)
+    wins  = strategy.wintrades
+    total = strategy.closedtrades
+    pf    = strategy.grossprofit / math.max(strategy.grossloss, 0.0001)
+    table.cell(dash, 0, 0, "IST now", text_color=color.white, bgcolor=color.new(color.gray, 50))
+    table.cell(dash, 1, 0, str.format_time(timenow, "dd MMM HH:mm", tz), text_color=color.white, bgcolor=color.new(color.gray, 50))
+    table.cell(dash, 0, 1, "Session", text_color=color.white)
+    table.cell(dash, 1, 1, inLondon ? "London 13:30-17:30" : inNY ? "New York 18:30-22:30" : "closed", text_color=color.white)
+    table.cell(dash, 0, 2, "1h bias", text_color=color.white)
+    table.cell(dash, 1, 2, htfBullish ? "BULLISH" : htfBearish ? "BEARISH" : "NEUTRAL", text_color=htfBullish ? color.green : htfBearish ? color.red : color.gray)
+    table.cell(dash, 0, 3, "Trades", text_color=color.white)
+    table.cell(dash, 1, 3, str.tostring(total), text_color=color.white)
+    table.cell(dash, 0, 4, "Win rate", text_color=color.white)
+    table.cell(dash, 1, 4, str.tostring(wins / math.max(total, 1) * 100, "#.#") + "%", text_color=color.white)
+    table.cell(dash, 0, 5, "Profit factor", text_color=color.white)
+    table.cell(dash, 1, 5, str.tostring(pf, "#.##"), text_color=color.white)
+    table.cell(dash, 0, 6, "Net profit (USD)", text_color=color.white)
+    table.cell(dash, 1, 6, str.tostring(strategy.netprofit, "#.##"), text_color=color.white)
+    table.cell(dash, 0, 7, "Net profit (INR)", text_color=color.white)
+    table.cell(dash, 1, 7, str.tostring(strategy.netprofit * 85, "#,###.##"), text_color=color.white)
+    table.cell(dash, 0, 8, "Max DD (USD)", text_color=color.white)
+    table.cell(dash, 1, 8, str.tostring(strategy.max_drawdown, "#.##"), text_color=color.white)

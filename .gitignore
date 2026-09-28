@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+state/replay_*
+state/*.png
+state/*.log
