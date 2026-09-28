@@ -212,11 +212,11 @@ class Bot:
                 if a.pos is not None or a.pending is not None:
                     log(f"{a.name.upper()}: dropping stale open position from {self.last_bar}")
                 a.pos = a.pending = None
-            self.shadows = []
         self.df = None
         self.trades_path = os.path.join(STATE, "trades.csv" if mode == "live" else "replay_trades.csv")
         self.signals_path = os.path.join(STATE, "signals.csv" if mode == "live" else "replay_signals.csv")
         self.closed = 0
+        self.flush_shadows()                         # live tracking cannot resume across runs
 
     # ---------- persistence
     def save(self):
@@ -423,6 +423,14 @@ class Bot:
             self.shadows.remove(s)
             self.publish(f"trade closed ({row['account']})")
 
+    def flush_shadows(self):
+        """Write out trades still waiting on their live twin (live exit unknown) and drop all twins."""
+        for s in self.shadows:
+            if "row" in s:
+                self.append(self.trades_path, s["row"], TRADE_COLS)
+                self.closed += 1
+        self.shadows = []
+
     def book_live(self, a, row, entry, exit_):
         pl = S.pnl_inr(row["contracts"], row["dir"], entry, exit_)
         a.equity_live += pl
@@ -459,7 +467,15 @@ class Bot:
         hard_stop = sess_end + pd.Timedelta("35min")
         if minutes:
             hard_stop = min(hard_stop, now_utc() + pd.Timedelta(minutes=minutes))
-        self.load_window(now_utc().floor(S.TF))
+        for attempt in range(10):
+            try:
+                self.load_window(now_utc().floor(S.TF))
+                break
+            except Exception as e:                                            # noqa: BLE001
+                log(f"history fetch failed ({attempt + 1}/10): {e}")
+                time.sleep(30)
+        else:
+            raise SystemExit("could not load candle history")
         self.catch_up(self.df.index[-1])
         before = self.closed
         while True:
@@ -486,6 +502,7 @@ class Bot:
                 not any(s.get("exit") is None for s in self.shadows)
             if done or now_utc() > hard_stop:
                 break
+        self.flush_shadows()
         self.publish("session end")
 
 
@@ -494,7 +511,7 @@ def git_commit(msg):
     for c in cmds:
         subprocess.run(c, cwd=HERE, check=False)
     for _ in range(3):
-        if subprocess.run(["git", "pull", "-q", "--rebase", "-X", "theirs"], cwd=HERE).returncode == 0 and \
+        if subprocess.run(["git", "pull", "-q", "--rebase", "--autostash", "-X", "theirs"], cwd=HERE).returncode == 0 and \
                 subprocess.run(["git", "push", "-q"], cwd=HERE).returncode == 0:
             return
         time.sleep(5)
