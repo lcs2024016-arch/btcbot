@@ -172,7 +172,7 @@ def candidates(df, p=P):
 # ---------------------------------------------------------------- trade simulation (candle model)
 
 @njit(cache=True)
-def _sim(O, H, L, bars, dirs, risks, stops, tgts, cap, slip):
+def _sim(O, H, L, bars, dirs, risks, stops, tgts, cap, slip, stop_first):
     k, n = len(bars), len(O)
     out = np.full((k, 4), np.nan)          # exit_bar, R, how, exit_px
     for j in range(k):
@@ -190,8 +190,8 @@ def _sim(O, H, L, bars, dirs, risks, stops, tgts, cap, slip):
                     px, how = O[i], 3
                 else:
                     hs, ht = L[i] <= stop, H[i] >= tgt
-                    if hs and ht:                               # TradingView: nearer extreme first
-                        if (H[i] - O[i]) < (O[i] - L[i]):
+                    if hs and ht:              # TradingView: nearer extreme first (stop_first: always stop)
+                        if (H[i] - O[i]) < (O[i] - L[i]) and not stop_first:
                             px, how = tgt, 1
                         else:
                             px, how = stop * (1 - slip), 0
@@ -207,7 +207,7 @@ def _sim(O, H, L, bars, dirs, risks, stops, tgts, cap, slip):
                 else:
                     hs, ht = H[i] >= stop, L[i] <= tgt
                     if hs and ht:
-                        if (O[i] - L[i]) < (H[i] - O[i]):
+                        if (O[i] - L[i]) < (H[i] - O[i]) and not stop_first:
                             px, how = tgt, 1
                         else:
                             px, how = stop * (1 + slip), 0
@@ -225,11 +225,13 @@ def _sim(O, H, L, bars, dirs, risks, stops, tgts, cap, slip):
     return out
 
 
-def label(df, t, slip=0.0):
-    """Outcome of each candidate traded on its own. R is per sizing distance |e - sl| (1% risk)."""
+def label(df, t, slip=0.0, stop_first=False):
+    """Outcome of each candidate traded on its own. R is per sizing distance |e - sl| (1% risk).
+    slip: fraction of price lost on every market fill; stop_first: when stop and target are both inside
+    one candle assume the stop came first (pessimistic) instead of TradingView's nearer-extreme rule."""
     O, H, L = (df[k].to_numpy() for k in ("open", "high", "low"))
     out = _sim(O, H, L, t.bar.to_numpy().astype(np.int64), t.dir.to_numpy().astype(np.int64),
-               (t.e - t.sl).abs().to_numpy(), t.stop.to_numpy(), t.tgt.to_numpy(), CAP, slip)
+               (t.e - t.sl).abs().to_numpy(), t.stop.to_numpy(), t.tgt.to_numpy(), CAP, slip, stop_first)
     ok = ~np.isnan(out[:, 0])
     t = t[ok].copy()
     xb = out[ok, 0].astype(int)

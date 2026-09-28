@@ -1,13 +1,14 @@
 """Exercise the live-quote code path (entries at bid/ask, 2 s stop/target polling, time exits, INR books)
 on history: quotes are simulated along each bar's open -> high/low -> close path.
 
-    python test_live_path.py 2026-09-01 2026-09-27
+    python tests/test_live_path.py 2026-09-01 2026-09-27
 """
 import os
 import sys
 import tempfile
 
 os.environ["FT_STATE"] = tempfile.mkdtemp()
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 

@@ -1,4 +1,5 @@
-# Monthly: add last month's Binance candles, re-run the walk-forward backtest, retrain the live model.
+# Monthly: add last month's Binance candles, re-run the walk-forward backtest, retrain the live model,
+# rebuild the README and the HTML reports in docs/.
 name: retrain
 
 on:
@@ -30,10 +31,12 @@ jobs:
         run: |
           python train.py --walkforward
           python report.py
+          python research/backtest50_report.py
+          python research/leverage_report.py
       - name: Commit
         run: |
           git config user.name "forward-test-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data model charts README.md
+          git add data model charts docs README.md
           git commit -m "monthly retrain $(TZ=Asia/Kolkata date '+%d %b %Y %H:%M IST')" || exit 0
           git pull --rebase -X theirs && git push

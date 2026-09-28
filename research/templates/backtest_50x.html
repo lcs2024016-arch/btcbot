@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backtest · 9/15 EMA + ML · 50x cross · ₹1,500</title>
+<style>
+.viz-root { color-scheme: light;
+  --page:#f9f9f7; --surface-1:#fcfcfb; --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+  --series-1:#2a78d6; --series-2:#eb6834; --neg:#e34948; --good:#0ca30c; --critical:#d03b3b; --success-text:#006300; }
+@media (prefers-color-scheme: dark) { :root:where(:not([data-theme="light"])) .viz-root { color-scheme: dark;
+  --page:#0d0d0d; --surface-1:#1a1a19; --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+  --series-1:#3987e5; --series-2:#d95926; --neg:#e66767; --success-text:#0ca30c; } }
+:root[data-theme="dark"] .viz-root { color-scheme: dark;
+  --page:#0d0d0d; --surface-1:#1a1a19; --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+  --series-1:#3987e5; --series-2:#d95926; --neg:#e66767; --success-text:#0ca30c; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+.viz-root { background: var(--page); color: var(--text-primary); min-height: 100vh; padding: 28px 32px 48px;
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 1180px; margin: 0 auto; }
+h1 { font-size: 22px; margin: 0 0 4px; font-weight: 600; }
+h2 { font-size: 16px; margin: 0 0 2px; font-weight: 600; }
+.sub { color: var(--text-secondary); margin: 0 0 16px; }
+.muted { color: var(--text-muted); }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-top: 16px; }
+.filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface-1); }
+.seg button { border: 0; background: transparent; color: var(--text-secondary); padding: 7px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: color-mix(in srgb, var(--series-1) 14%, transparent); color: var(--text-primary); font-weight: 600; }
+.tiles { display: grid; grid-template-columns: 1.4fr repeat(5, 1fr); gap: 12px; margin-top: 16px; }
+.tiles.sip { grid-template-columns: 1.4fr repeat(4, 1fr); margin-top: 12px; }
+.tiles.sip .tile { background: var(--page); }
+.tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.tile .label { color: var(--text-secondary); font-size: 13px; }
+.tile .value { font-size: 24px; font-weight: 600; margin: 4px 0 2px; }
+.tile.hero .value { font-size: 48px; line-height: 1.05; }
+.tile .delta { font-size: 12px; color: var(--text-secondary); }
+.up { color: var(--success-text); } .down { color: var(--critical); }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 10px 0 4px; color: var(--text-secondary); font-size: 13px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; }
+.chart svg:focus, .chart rect:focus { outline: none; }
+.tip { position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); display: none; min-width: 170px; z-index: 5; }
+.tip .t { color: var(--text-muted); margin-bottom: 4px; }
+.tip .r { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.tip .r b { font-weight: 600; color: var(--text-primary); min-width: 64px; text-align: right; }
+.tip .r span { color: var(--text-secondary); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 8px; }
+th { text-align: right; color: var(--text-muted); font-weight: 500; padding: 6px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+td.l, th.l { text-align: left; }
+.scroll { max-height: 520px; overflow: auto; }
+.scroll th { position: sticky; top: 0; background: var(--surface-1); }
+ul.tight { margin: 6px 0 0; padding-left: 20px; } ul.tight li { margin: 3px 0; }
+.bar.on { opacity: .75; }
+button.theme, button.more { background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit; font-size: 12px; }
+button.theme { float: right; }
+.kv { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 24px; margin-top: 10px; }
+.kv div span { display: block; color: var(--text-muted); font-size: 12px; } .kv div b { font-weight: 600; font-size: 15px; }
+@media (max-width: 1000px) { .tiles { grid-template-columns: 1fr 1fr 1fr; } .two { grid-template-columns: 1fr; } .kv { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<div class="viz-root"><div class="wrap">
+<button class="theme" id="theme">Light / dark</button>
+<h1>Backtest · 9/15 EMA Scalper + ML filter · 50x cross margin</h1>
+<p class="sub" id="subtitle"></p>
+
+<div class="filters">
+  <span class="muted">Start date</span>
+  <div class="seg" role="group" aria-label="Start date">
+    <button data-p="2021" aria-pressed="false">Jan 2021 (full walk-forward)</button>
+    <button data-p="2024" aria-pressed="true">Jan 2024 (recent)</button>
+  </div>
+  <span class="muted" style="margin-left:12px">Monthly SIP</span>
+  <div class="seg" role="group" aria-label="Monthly SIP" id="sipseg">
+    <button data-s="0" aria-pressed="false">None</button>
+    <button data-s="500" aria-pressed="true">₹500</button>
+    <button data-s="1000" aria-pressed="false">₹1,000</button>
+    <button data-s="2000" aria-pressed="false">₹2,000</button>
+  </div>
+  <span class="muted">· start ₹1,500, SIP added on the 1st of every month</span>
+</div>
+
+<div class="card">
+  <h2 id="sip-title"></h2>
+  <div class="muted" id="sip-sub"></div>
+  <div class="tiles sip" id="siptiles"></div>
+  <div class="legend" id="lg0"></div>
+  <div class="chart" id="c0"></div>
+  <table id="sipyears"></table>
+</div>
+
+<h2 style="margin-top:28px">Without SIP · a single ₹1,500 deposit</h2>
+
+<div class="tiles" id="tiles" style="margin-top:8px"></div>
+
+<div class="card">
+  <h2>Balance</h2>
+  <div class="muted">Paper balance in ₹ after every trade. ML filter = the strategy the bot trades; No ML = every signal the Pine rules take, same sizing.</div>
+  <div class="legend" id="lg1"></div>
+  <div class="chart" id="c1"></div>
+</div>
+
+<div class="two">
+  <div class="card">
+    <h2>Drawdown</h2>
+    <div class="muted">How far each account was below its previous high.</div>
+    <div class="legend" id="lg2"></div>
+    <div class="chart" id="c2"></div>
+  </div>
+  <div class="card">
+    <h2>ML account · P&amp;L per month</h2>
+    <div class="muted">₹ per calendar month (IST). Blue = profit, red = loss.</div>
+    <div class="chart" id="c3" style="margin-top:34px"></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Year by year</h2>
+  <table id="years"></table>
+</div>
+
+<div class="card">
+  <h2>How robust is this? Same trades, harsher assumptions</h2>
+  <div class="muted" id="sens-sub"></div>
+  <table id="sens"></table>
+</div>
+
+<div class="card">
+  <h2>Limitations · read before trusting these numbers</h2>
+  <ul class="tight" id="caveats"></ul>
+</div>
+
+<div class="card">
+  <h2>ML account · where the profit comes from</h2>
+  <table id="parts"></table>
+</div>
+
+<div class="card">
+  <h2>ML account · position size and margin at 50x cross</h2>
+  <div class="kv" id="kv"></div>
+</div>
+
+<div class="card">
+  <h2>ML account · trades (newest first, IST)</h2>
+  <div class="scroll"><table id="trades"></table></div>
+  <div style="margin-top:10px"><button class="more" id="more">Show all trades</button></div>
+</div>
+
+<div class="card">
+  <h2>How this backtest works</h2>
+  <ul class="tight" id="how"></ul>
+</div>
+</div></div>
+
+<script>
+const D = /*__DATA__*/null;
+const $ = id => document.getElementById(id);
+const css = v => getComputedStyle(document.querySelector('.viz-root')).getPropertyValue(v).trim();
+const inr = (v, d = 0) => (v < 0 ? '−' : '') + '₹' + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits: d, minimumFractionDigits: d});
+const sinr = (v, d = 0) => (v > 0 ? '+' : '') + inr(v, d);
+const pct = (v, d = 0) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d) + '%';
+const rr = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + 'R';
+const fmtDate = ms => new Date(ms).toLocaleDateString('en-IN', {day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata'});
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const txt = s => document.createTextNode(s);
+const svgText = (p, a, s) => { const t = el('text', a, p); t.textContent = s; return t; };
+let P = new URLSearchParams(location.search).get('from') || '2024', showAll = false;
+let SIP = +(new URLSearchParams(location.search).get('sip') || 500);
+/*SIM-START*/
+var SIMC = {CAP: 1500, LOT: 0.001, FX: 85, LEV: 50, MM: 0.0025, RISK: 1, MAXR: 2, SAFE: 2};
+function contracts(eq, e, sl) {                      // = strategy.contracts() in the bot
+  const C = SIMC, risk1 = C.LOT * Math.abs(e - sl) * C.FX;
+  if (risk1 <= 0 || eq <= 0) return 0;
+  let n = Math.floor(eq * C.RISK / 100 / risk1);
+  if (n === 0 && risk1 <= eq * C.MAXR / 100) n = 1;
+  n = Math.min(n, Math.floor(eq / C.FX * C.LEV / (C.LOT * e)));
+  const stop = Math.abs(e - sl) / e;
+  const liq = k => { const notional = k * C.LOT * e; return (eq / C.FX - C.MM * notional) / notional; };
+  while (n > 0 && liq(n) < C.SAFE * stop) n--;
+  return n;
+}
+var IST_MS = 5.5 * 3600e3;
+function monthKey(ms) { const d = new Date(ms + IST_MS); return d.getUTCFullYear() * 12 + d.getUTCMonth(); }
+function monthStart(k) { return Date.UTC(Math.floor(k / 12), k % 12, 1) - IST_MS; }
+function simulate(T, start, sip) {
+  const C = SIMC; let eq = C.CAP, inv = C.CAP, idx = 1, peak = 1, dd = 0;
+  const t0 = Date.parse(start + 'T00:00:00+05:30'); let cur = monthKey(t0);
+  const flows = [[t0, -C.CAP]], eqs = [], invs = [], years = {};
+  const yr = ms => new Date(ms + IST_MS).getUTCFullYear();
+  const Y = y => (years[y] = years[y] || {added: 0, pnl: 0, end: 0});
+  for (let i = 0; i < T.t.length; i++) {
+    const m = monthKey(T.t[i]);
+    while (cur < m) { cur++; eq += sip; inv += sip; flows.push([monthStart(cur), -sip]); Y(yr(monthStart(cur))).added += sip; }
+    const n = contracts(eq, T.e[i], T.sl[i]);
+    const pl = n ? n * C.LOT * T.d[i] * (T.ex[i] - T.en[i]) * C.FX : 0;
+    idx *= 1 + pl / eq; peak = Math.max(peak, idx); dd = Math.max(dd, 1 - idx / peak);
+    eq += pl; eqs.push(eq); invs.push(inv); Y(yr(T.t[i])).pnl += pl; Y(yr(T.t[i])).end = eq;
+  }
+  return {final: eq, invested: inv, dd: dd * 100, flows, eq: eqs, inv: invs, years};
+}
+function xirr(flows, final, end) {
+  const cf = flows.concat([[end, final]]), t0 = cf[0][0];
+  const f = r => cf.reduce((s, [t, v]) => s + v / Math.pow(1 + r, (t - t0) / 864e5 / 365), 0);
+  let lo = -0.99, hi = 10; for (let k = 0; k < 200; k++) { const mid = (lo + hi) / 2; if (f(mid) > 0) lo = mid; else hi = mid; }
+  return (lo + hi) / 2 * 100;
+}
+/*SIM-END*/
+const M = D.meta;
+$('subtitle').textContent = `Delta Exchange India BTCUSD · 5-minute · Monday–Friday, London 13:30–17:30 IST and New York 18:30–22:30 IST · ${M.risk}% risk per trade · ${M.lev}x ${M.mode} margin · whole lots of 0.001 BTC · ₹${M.fx}/$ · fee-free (every trade closes within 30 min) · zero slippage · data to ${M.end}`;
+
+function tiles() {
+  const h = $('tiles'); h.textContent = '';
+  const s = D.periods[P].ml.summary, b = D.periods[P].base.summary;
+  const add = (label, value, delta, hero) => { const t = document.createElement('div'); t.className = 'tile' + (hero ? ' hero' : '');
+    const l = document.createElement('div'); l.className = 'label'; l.textContent = label;
+    const v = document.createElement('div'); v.className = 'value'; v.textContent = value;
+    const d = document.createElement('div'); d.className = 'delta'; d.textContent = delta; t.append(l, v, d); h.append(t); };
+  add('ML account · ₹1,500 became', inr(s.final), `${pct(s.ret)} total · ${s.cagr.toFixed(0)}% a year · No ML: ${inr(b.final)}`, true);
+  add('Win rate', s.win.toFixed(1) + '%', `No ML ${b.win.toFixed(1)}%`);
+  add('Profit factor', s.PF.toFixed(2), `No ML ${b.PF.toFixed(2)}`);
+  add('Worst drawdown', s.maxDD.toFixed(1) + '%', `No ML ${b.maxDD.toFixed(1)}%`);
+  add('Trades', s.n.toLocaleString('en-IN'), `${s.per_mo.toFixed(0)} a month · No ML ${Math.round(b.per_mo)}`);
+  add('Avg win / avg loss', `${inr(s.avg_win)} / ${inr(Math.abs(s.avg_loss))}`, `longest losing run ${s.streak} trades`);
+}
+
+function legend(host, names, colors, dashLast = false) { host.textContent = '';
+  names.forEach((n, k) => { const sp = document.createElement('span'); const sv = el('svg', {width: 16, height: 4});
+    const a = {x1: 0, y1: 2, x2: 16, y2: 2, stroke: colors[k], 'stroke-width': 2, 'stroke-linecap': 'round'};
+    if (dashLast && k === names.length - 1) a['stroke-dasharray'] = '4 3';
+    el('line', a, sv); sp.append(sv, txt(n)); host.append(sp); }); }
+
+// line chart: series = [{name, t:[], y:[]}], each with its own x values; crosshair snaps to the ML series' trades
+function lineChart(host, series, {h = 300, fmt = v => inr(v), step0 = null, zeroLine = null, endLabels = true, dashLast = false} = {}) {
+  host.textContent = '';
+  const colors = series.map((_, k) => dashLast && k === series.length - 1 ? css('--text-muted') : css(`--series-${k + 1}`));
+  const W = host.clientWidth || 900, m = {l: 64, r: endLabels ? 84 : 14, t: 12, b: 30};
+  const svg = el('svg', {viewBox: `0 0 ${W} ${h}`, height: h, role: 'img'}, host);
+  const xs = series.flatMap(s => s.t), ys = series.flatMap(s => s.y);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  let y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const span = y1 - y0, step = step0 || [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000].find(s => span / s <= 6) || 10000;
+  y0 = Math.floor(y0 / step) * step; y1 = Math.ceil(y1 / step) * step;
+  const sx = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r), sy = v => h - m.b - (v - y0) / (y1 - y0) * (h - m.t - m.b);
+  for (let v = y0; v <= y1 + 1e-9; v += step) { el('line', {x1: m.l, x2: W - m.r, y1: sy(v), y2: sy(v), stroke: css('--grid'), 'stroke-width': 1}, svg);
+    svgText(svg, {x: m.l - 8, y: sy(v) + 4, 'text-anchor': 'end', fill: css('--text-muted'), 'font-size': 11}, fmt(v)); }
+  const yrs = (x1 - x0) / 3.15e10;
+  for (let y = new Date(x0).getUTCFullYear(); y <= new Date(x1).getUTCFullYear(); y++) for (const mo of yrs > 3 ? [0] : [0, 6]) {
+    const t = Date.UTC(y, mo, 1); if (t <= x0 || t >= x1) continue;
+    svgText(svg, {x: sx(t), y: h - 9, 'text-anchor': 'middle', fill: css('--text-muted'), 'font-size': 11},
+      new Date(t).toLocaleDateString('en-IN', {month: 'short', year: 'numeric', timeZone: 'UTC'})); }
+  el('line', {x1: m.l, x2: W - m.r, y1: h - m.b, y2: h - m.b, stroke: css('--axis'), 'stroke-width': 1}, svg);
+  if (zeroLine !== null && zeroLine >= y0 && zeroLine <= y1) el('line', {x1: m.l, x2: W - m.r, y1: sy(zeroLine), y2: sy(zeroLine), stroke: css('--axis'), 'stroke-width': 1}, svg);
+  const ends = [];
+  series.forEach((s, k) => { let d = ''; s.t.forEach((t, i) => { d += (i ? 'L' : 'M') + sx(t).toFixed(1) + ',' + sy(s.y[i]).toFixed(1); });
+    const pa = {d, fill: 'none', stroke: colors[k], 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round'};
+    if (dashLast && k === series.length - 1) pa['stroke-dasharray'] = '5 4';
+    el('path', pa, svg);
+    ends.push({k, x: sx(s.t[s.t.length - 1]), y: sy(s.y[s.y.length - 1]), v: s.y[s.y.length - 1]}); });
+  ends.forEach(e => el('circle', {cx: e.x, cy: e.y, r: 4, fill: colors[e.k], stroke: css('--surface-1'), 'stroke-width': 2}, svg));
+  if (endLabels) { let prev = -1e9; [...ends].sort((a, b) => a.y - b.y).forEach(e => { const ly = Math.max(e.y, prev + 15); prev = ly;
+    el('line', {x1: e.x + 6, y1: e.y, x2: W - m.r + 8, y2: ly, stroke: css('--axis'), 'stroke-width': 1}, svg);
+    svgText(svg, {x: W - m.r + 12, y: ly + 4, fill: css('--text-secondary'), 'font-size': 11}, fmt(e.v)); }); }
+  const cross = el('line', {y1: m.t, y2: h - m.b, stroke: css('--axis'), 'stroke-width': 1, visibility: 'hidden'}, svg);
+  const dots = series.map((_, k) => el('circle', {r: 4, fill: colors[k], stroke: css('--surface-1'), 'stroke-width': 2, visibility: 'hidden'}, svg));
+  const tip = document.createElement('div'); tip.className = 'tip'; host.append(tip);
+  const hit = el('rect', {x: m.l, y: m.t, width: W - m.l - m.r, height: h - m.t - m.b, fill: 'transparent', tabindex: 0}, svg);
+  const at = (s, t) => { let lo = 0, hi = s.t.length - 1; if (t < s.t[0]) return 0; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (s.t[mid] <= t) lo = mid; else hi = mid - 1; } return lo; };
+  const hide = () => { tip.style.display = 'none'; cross.setAttribute('visibility', 'hidden'); dots.forEach(d => d.setAttribute('visibility', 'hidden')); };
+  let cur = x1;
+  function show(t) { cur = t; const px = sx(t); cross.setAttribute('x1', px); cross.setAttribute('x2', px); cross.setAttribute('visibility', 'visible');
+    tip.textContent = ''; const hd = document.createElement('div'); hd.className = 't'; hd.textContent = fmtDate(t); tip.append(hd);
+    series.forEach((s, k) => { const i = at(s, t); dots[k].setAttribute('cx', px); dots[k].setAttribute('cy', sy(s.y[i])); dots[k].setAttribute('visibility', 'visible');
+      const r = document.createElement('div'); r.className = 'r'; const sv = el('svg', {width: 14, height: 4}); el('line', {x1: 0, y1: 2, x2: 14, y2: 2, stroke: colors[k], 'stroke-width': 2}, sv);
+      const b = document.createElement('b'); b.textContent = fmt(s.y[i]); const n = document.createElement('span'); n.textContent = s.name; r.append(sv, b, n); tip.append(r); });
+    tip.style.display = 'block'; const box = host.getBoundingClientRect(), sc = box.width / W;
+    let left = px * sc + 14; if (left + tip.offsetWidth > box.width) left = px * sc - tip.offsetWidth - 14; tip.style.left = left + 'px'; tip.style.top = '8px'; }
+  hit.addEventListener('pointermove', e => { const box = svg.getBoundingClientRect(); const v = m.l + ((e.clientX - box.left) * (W / box.width) - m.l);
+    const t = x0 + (v - m.l) / (W - m.l - m.r) * (x1 - x0); const S0 = series[0]; show(S0.t[at(S0, t)]); });
+  hit.addEventListener('pointerleave', hide); hit.addEventListener('blur', hide); hit.addEventListener('focus', () => show(cur));
+  hit.addEventListener('keydown', e => { const S0 = series[0]; let i = at(S0, cur); if (e.key === 'ArrowRight') i = Math.min(S0.t.length - 1, i + 1); else if (e.key === 'ArrowLeft') i = Math.max(0, i - 1); else return; show(S0.t[i]); e.preventDefault(); });
+  return colors;
+}
+
+function monthBars(host, months, {h = 268} = {}) {
+  host.textContent = '';
+  const W = host.clientWidth || 500, m = {l: 58, r: 8, t: 10, b: 30};
+  const svg = el('svg', {viewBox: `0 0 ${W} ${h}`, height: h, role: 'img'}, host);
+  const vals = months.map(x => x.v), lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
+  const step = [10, 20, 25, 50, 100, 200, 250, 500, 1000].find(s => (hi - lo) / s <= 6) || 2000;
+  const y0 = Math.floor(lo / step) * step, y1 = Math.ceil(hi / step) * step;
+  const sy = v => h - m.b - (v - y0) / (y1 - y0) * (h - m.t - m.b);
+  for (let v = y0; v <= y1 + 1e-9; v += step) { el('line', {x1: m.l, x2: W - m.r, y1: sy(v), y2: sy(v), stroke: v === 0 ? css('--axis') : css('--grid'), 'stroke-width': 1}, svg);
+    svgText(svg, {x: m.l - 8, y: sy(v) + 4, 'text-anchor': 'end', fill: css('--text-muted'), 'font-size': 11}, inr(v)); }
+  const band = (W - m.l - m.r) / months.length, bw = Math.max(2, Math.min(24, band - 2));
+  const tip = document.createElement('div'); tip.className = 'tip'; host.append(tip);
+  months.forEach((mo, i) => {
+    const cx = m.l + band * (i + 0.5), x = cx - bw / 2, top = sy(Math.max(mo.v, 0)), bot = sy(Math.min(mo.v, 0)), hgt = Math.max(1, bot - top);
+    const r = Math.min(4, bw / 2, hgt / 2), pos = mo.v >= 0;
+    const d = pos ? `M${x},${bot}L${x},${top + r}Q${x},${top} ${x + r},${top}L${x + bw - r},${top}Q${x + bw},${top} ${x + bw},${top + r}L${x + bw},${bot}Z`
+                  : `M${x},${top}L${x},${bot - r}Q${x},${bot} ${x + r},${bot}L${x + bw - r},${bot}Q${x + bw},${bot} ${x + bw},${bot - r}L${x + bw},${top}Z`;
+    const bar = el('path', {d, fill: pos ? css('--series-1') : css('--neg'), class: 'bar'}, svg);
+    if (mo.k.endsWith('-01')) svgText(svg, {x: cx, y: h - 9, 'text-anchor': 'middle', fill: css('--text-muted'), 'font-size': 11}, mo.k.slice(0, 4));
+    const hitR = el('rect', {x: m.l + band * i, y: m.t, width: band, height: h - m.t - m.b, fill: 'transparent', tabindex: 0}, svg);
+    const on = () => { bar.classList.add('on'); tip.textContent = ''; const t = document.createElement('div'); t.className = 't';
+      t.textContent = new Date(mo.k + '-01T00:00:00Z').toLocaleDateString('en-IN', {month: 'long', year: 'numeric', timeZone: 'UTC'});
+      const r2 = document.createElement('div'); r2.className = 'r'; const b = document.createElement('b'); b.textContent = sinr(mo.v, 2); const s2 = document.createElement('span'); s2.textContent = pos ? 'profit' : 'loss';
+      r2.append(b, s2); tip.append(t, r2); tip.style.display = 'block'; const box = host.getBoundingClientRect(), sc = box.width / W;
+      tip.style.left = Math.max(0, Math.min(cx * sc - tip.offsetWidth / 2, box.width - tip.offsetWidth)) + 'px'; tip.style.top = Math.max(0, top * sc - 56) + 'px'; };
+    const off = () => { bar.classList.remove('on'); tip.style.display = 'none'; };
+    hitR.addEventListener('pointerenter', on); hitR.addEventListener('focus', on); hitR.addEventListener('pointerleave', off); hitR.addEventListener('blur', off);
+  });
+}
+
+function table(host, head, rows, left = []) {
+  host.textContent = ''; const tr = document.createElement('tr');
+  head.forEach((h, i) => { const th = document.createElement('th'); th.textContent = h; if (left.includes(i)) th.className = 'l'; tr.append(th); }); host.append(tr);
+  rows.forEach(r => { const t = document.createElement('tr'); r.forEach((c, i) => { const td = document.createElement('td');
+    if (c && typeof c === 'object') { td.textContent = c.t; td.className = c.c; } else td.textContent = c; if (left.includes(i)) td.classList.add('l'); t.append(td); }); host.append(t); });
+}
+const sgn = (v, s) => ({t: s, c: v > 0 ? 'up' : v < 0 ? 'down' : ''});
+
+function renderSip() {
+  const d = D.periods[P], start = P === '2021' ? '2021-01-01' : '2024-01-01', end = Date.parse(M.end + 'T23:59:00+05:30');
+  document.querySelectorAll('#sipseg button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.s === SIP));
+  const ml = simulate(d.ml.sip, start, SIP), bs = simulate(d.base.sip, start, SIP);
+  const xm = xirr(ml.flows, ml.final, end), xb = xirr(bs.flows, bs.final, end);
+  $('sip-title').textContent = SIP ? `Monthly SIP of ${inr(SIP)} · what the bot would have grown it to` : 'No SIP · a single ₹1,500 deposit';
+  $('sip-sub').textContent = `Start ₹1,500 on ${fmtDate(Date.parse(start + 'T00:00:00+05:30'))}` + (SIP ? `, then ${inr(SIP)} added on the 1st of every month.` : '.') +
+    ' Every trade is sized on the balance at that moment (1% risk, 50x cross, whole lots), so each deposit starts working immediately.';
+  const h = $('siptiles'); h.textContent = '';
+  const add = (label, value, delta, hero) => { const t = document.createElement('div'); t.className = 'tile' + (hero ? ' hero' : '');
+    const l = document.createElement('div'); l.className = 'label'; l.textContent = label; const v = document.createElement('div'); v.className = 'value'; v.textContent = value;
+    const dd = document.createElement('div'); dd.className = 'delta'; dd.textContent = delta; t.append(l, v, dd); h.append(t); };
+  add('Balance at the end (ML bot)', inr(ml.final), `No ML: ${inr(bs.final)}`, true);
+  add('You put in', inr(ml.invested), SIP ? `₹1,500 + ${Math.round((ml.invested - 1500) / SIP)} × ${inr(SIP)}` : 'one deposit');
+  add('Profit', sinr(ml.final - ml.invested), `${pct((ml.final / ml.invested - 1) * 100)} on the money put in`);
+  add('Return per year (XIRR)', xm.toFixed(1) + '%', `No ML ${xb.toFixed(1)}% · counts when each ₹ went in`);
+  add('Worst fall of the strategy', ml.dd.toFixed(1) + '%', `No ML ${bs.dd.toFixed(1)}% · deposits excluded`);
+  const series = [{name: 'ML bot balance', t: d.ml.sip.t, y: ml.eq}, {name: 'No-ML balance', t: d.base.sip.t, y: bs.eq},
+                  {name: 'Money put in', t: d.ml.sip.t, y: ml.inv}];
+  const cols = lineChart($('c0'), series, {h: 300, dashLast: true});
+  legend($('lg0'), series.map(s => s.name), cols, true);
+  const ys = Object.keys(ml.years).sort();
+  table($('sipyears'), ['Year', 'You added', 'ML P&L', 'ML balance at year end', 'No-ML P&L', 'No-ML balance at year end'],
+    ys.map(y => { const a = ml.years[y], b = bs.years[y] || {pnl: 0, end: 0};
+      return [y, inr(a.added + (y === start.slice(0, 4) ? 1500 : 0)), sgn(a.pnl, sinr(a.pnl)), inr(a.end), sgn(b.pnl, sinr(b.pnl)), inr(b.end)]; }));
+}
+
+function render() {
+  renderSip();
+  const d = D.periods[P];
+  document.querySelectorAll('.seg button[data-p]').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === P));
+  tiles();
+  const eqS = [{name: 'ML filter', t: d.ml.t, y: d.ml.eq}, {name: 'No ML', t: d.base.t, y: d.base.eq}];
+  legend($('lg1'), eqS.map(s => s.name), lineChart($('c1'), eqS, {zeroLine: 1500}));
+  const ddS = [{name: 'ML filter', t: d.ml.t, y: d.ml.dd}, {name: 'No ML', t: d.base.t, y: d.base.dd}];
+  legend($('lg2'), ddS.map(s => s.name), lineChart($('c2'), ddS, {h: 240, fmt: v => (v < 0 ? '−' : '') + Math.abs(v).toFixed(0) + '%', endLabels: false, zeroLine: 0}));
+  monthBars($('c3'), d.ml.months);
+  const yb = Object.fromEntries(d.base.years.map(y => [y.k, y]));
+  table($('years'), ['Year', 'ML trades', 'ML win rate', 'ML avg R', 'ML P&L', 'ML return', 'ML worst DD', 'No-ML P&L', 'No-ML return', 'No-ML worst DD'],
+    d.ml.years.map(y => { const b = yb[y.k] || {}; return [y.k, y.n, y.win.toFixed(1) + '%', rr(y.avgR), sgn(y.pnl, sinr(y.pnl)), sgn(y.ret, pct(y.ret, 1)), y.dd.toFixed(1) + '%',
+      b.pnl !== undefined ? sgn(b.pnl, sinr(b.pnl)) : '–', b.ret !== undefined ? sgn(b.ret, pct(b.ret, 1)) : '–', b.dd !== undefined ? b.dd.toFixed(1) + '%' : '–']; }));
+  const se = d.sens;
+  $('sens-sub').textContent = `ML account from ${P === '2021' ? 'Jan 2021' : 'Jan 2024'}, ₹1,500 start, 1% risk, 50x cross. Slippage is charged on the entry, every stop and every time exit (targets are limit orders). Delta's live BTCUSD spread was about 0.0006% when checked; stop orders in fast markets slip more. The highlighted row is what the rest of this page shows.`;
+  table($('sens'), ['Fill rule', 'Costs', 'Avg R', 'Win rate', '₹1,500 →', 'Worst drawdown'],
+    se.rows.map(r => [r.rule, r.cost, sgn(r.avgR, rr(r.avgR)), r.win.toFixed(1) + '%', sgn(r.final - 1500, inr(r.final)), r.dd.toFixed(1) + '%']), [0, 1]);
+  [...$('sens').querySelectorAll('tr')].slice(1).forEach((tr, i) => { if (se.rows[i].base) tr.style.background = 'color-mix(in srgb, var(--series-1) 8%, transparent)'; });
+  const cav = $('caveats'); cav.textContent = '';
+  [`It only works because Delta India charges no fee on trades closed within 30 minutes. With normal fees every trade would cost about ${Math.abs(se.rows[se.rows.length - 1].avgR - se.avgR).toFixed(2)}R, more than the whole edge (last row above). If Delta ends or changes that rule, stop the bot.`,
+   `The edge is small and uncertain. Average ${rr(se.avgR)} per trade over ${se.n} trades, give or take ${se.se.toFixed(2)}R (one standard error). That is roughly a 2-standard-error result: probably real, but a true edge near zero cannot be ruled out.`,
+   'Hindsight in the design. This strategy was the survivor of about 20 BTC strategies tested on the same data, and the weekday filter, the top-35% cut, the 2R target and the session hours were chosen after seeing full-history results. The walk-forward protects the model from seeing the future, not these choices. Expect live results to be worse than this backtest.',
+   'Recent years are weaker. The average trade from 2021–2023 was clearly better than from 2024 on, and 2025 was flat to negative (average trade below zero). The edge may be fading.',
+   'ML mostly buys a smoother ride, not more money. Over the full history the No-ML version ended with more (it trades about 3× as often) but fell more than twice as far.',
+   'Backtest prices are Binance BTCUSDT; the bot trades Delta BTCUSD. They track closely (checked on 2024+ data) but not tick for tick.',
+   'Not modelled: funding (tiny, positions last ≤ 25 min), exchange outages, API errors, late GitHub runs, and 1-lot rounding making real risk anywhere from about 0.5% to 2% of the balance on a given trade.',
+   'The SIP numbers compound these same assumptions; treat them as an upper-end scenario, not a projection.'
+  ].forEach(s2 => { const li = document.createElement('li'); li.textContent = s2; cav.append(li); });
+  const parts = [];
+  for (const [title, list] of [['Session', d.ml.sessions], ['Direction', d.ml.dirs], ['Entry type', d.ml.kinds], ['Exit', d.ml.exits]])
+    list.forEach((x, i) => parts.push([i ? '' : title, x.k, x.n, x.win.toFixed(1) + '%', rr(x.avgR), sgn(x.pnl, sinr(x.pnl))]));
+  table($('parts'), ['', 'Group', 'Trades', 'Win rate', 'Avg R', 'P&L'], parts, [0, 1]);
+  const s = d.ml.summary, kv = $('kv'); kv.textContent = '';
+  [['Typical lots per trade', `${s.med_lots} (max ${s.max_lots})`], ['Typical risk per trade', s.med_risk.toFixed(2) + '% of balance'],
+   ['Typical stop distance', s.med_stop.toFixed(2) + '% of price'], ['Skipped (1 lot > 2% risk)', `${s.skipped} trades`],
+   ['Typical margin locked', inr(s.med_margin)], ['Largest margin locked', inr(s.max_margin)],
+   ['Typical liquidation distance', s.med_liq.toFixed(1) + '% (cross margin)'], ['Closest liquidation', s.min_liq.toFixed(1) + '% vs stop ≤ half that'],
+   ['Best trade', sinr(s.best, 2)], ['Worst trade', sinr(s.worst, 2)], ['Average win', inr(s.avg_win, 2)], ['Average loss', inr(Math.abs(s.avg_loss), 2)]]
+    .forEach(([k, v]) => { const dv = document.createElement('div'); const sp = document.createElement('span'); sp.textContent = k; const b = document.createElement('b'); b.textContent = v; dv.append(sp, b); kv.append(dv); });
+  const tr = showAll ? d.ml.trades : d.ml.trades.slice(0, 100);
+  table($('trades'), ['Entry (IST)', 'Session', 'Side', 'Type', 'p(win)', 'Lots', 'Entry', 'Stop', 'Target', 'Exit', 'Exit reason', 'R', 'P&L', 'Balance', 'Margin', 'Liq. dist'],
+    tr.map(x => [x.t, x.s, x.d, x.k, x.p.toFixed(2), x.n, x.e.toLocaleString('en-IN'), x.sl.toLocaleString('en-IN'), x.tp.toLocaleString('en-IN'), x.x.toLocaleString('en-IN'), x.h,
+      sgn(x.R, rr(x.R)), sgn(x.pl, sinr(x.pl, 2)), inr(x.eq, 2), inr(x.m), x.liq.toFixed(1) + '%']), [0, 1, 2, 3, 10]);
+  $('more').textContent = showAll ? 'Show latest 100' : `Show all ${d.ml.trades.length} trades`;
+}
+[`Signals: the 9/15 EMA Scalper v3 Pine rules on 5-minute BTC, Monday–Friday, entries London 13:30–17:30 IST and New York 18:30–22:30 IST. ML filter: LightGBM, retrained every month on past data only and scored on the next month (walk-forward); keeps the top 35% of signals. Out-of-sample AUC ${M.auc.toFixed(3)} (since 2024: ${M.auc24.toFixed(3)}).`,
+ 'Fills: market entry at the next 5-minute open; stop and target as resting orders (if both are touched in one bar, TradingView\'s rule decides); forced exit 25 minutes after entry.',
+ `Sizing: whole Delta lots (0.001 BTC) so a stop-out loses ${M.risk}% of the balance; 1 lot if that rounds to 0 but risks ≤ 2%, otherwise the trade is skipped. ${M.lev}x ${M.mode} margin: lots are also capped by margin and so liquidation is at least 2× farther than the stop (it never binds at ₹1,500).`,
+ 'Costs: none. Delta India charges no fee on trades closed within 30 minutes. Slippage and funding are not included; the forward test on GitHub measures real slippage.',
+ 'Price history: Binance BTCUSDT perpetual 5-minute candles (Delta BTCUSD tracks it closely). Past results are a simulation, not a promise.'
+].forEach(s => { const li = document.createElement('li'); li.textContent = s; $('how').append(li); });
+document.querySelectorAll('.seg button[data-p]').forEach(b => b.addEventListener('click', () => { P = b.dataset.p; render(); }));
+document.querySelectorAll('#sipseg button').forEach(b => b.addEventListener('click', () => { SIP = +b.dataset.s; renderSip(); }));
+$('more').addEventListener('click', () => { showAll = !showAll; render(); });
+render();
+let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 150); });
+$('theme').addEventListener('click', () => { const r = document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark ? 'light' : 'dark'; render(); });
+</script>
+</body>
+</html>

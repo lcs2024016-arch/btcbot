@@ -8,7 +8,11 @@ every trade.
 **Mode:** paper trading · **Last update:** not started yet · **Data:** – · **Model:** trained 2026-09-28, cut p ≥ 0.441 · **Open positions:** none
 
 > ⚠️ Paper trading only. No orders are sent to any exchange. Past and simulated results do not
-> guarantee future returns.
+> guarantee future returns. Read [Limitations](#limitations) before trusting any number here.
+
+**Reports** (open in a browser once GitHub Pages is enabled, see [Repository layout](#repository-layout)):
+[backtest at the bot's settings + monthly SIP](https://10vulture1005.github.io/btcbot/backtest_50x.html) ·
+[what 100x / 200x leverage does](https://10vulture1005.github.io/btcbot/leverage.html)
 
 ## Schedule (Indian Standard Time)
 
@@ -51,6 +55,26 @@ Walk-forward 2021-01 → 2026-09: the model is retrained every month on past dat
   <img alt="Backtest equity since 2024" src="charts/backtest_equity_light.svg">
 </picture>
 
+
+## Limitations
+
+The backtest numbers are the optimistic end of what to expect. In order of importance:
+
+1. **It only works because of Delta India's fee-free rule** for trades closed within 30 minutes. With normal
+   fees (0.05% taker, 0.02% maker) the same trades lose about 0.4R each: ₹1,500 → ₹292 since 2024. If Delta
+   ends or changes the rule, stop the bot.
+2. **The edge is small and uncertain:** about +0.11R per trade since 2024 (± 0.055R, one standard error,
+   ~500 trades). Probably real, but an edge close to zero is not ruled out.
+3. **Hindsight in the design.** This strategy survived out of about 20 BTC strategies tested on the same data,
+   and the weekday filter, top-35% cut, 2R target and session hours were chosen after seeing the full history.
+   The monthly walk-forward stops the *model* seeing the future, not these choices.
+4. **Recent years are weaker** than 2021–2023, and 2025 was flat to negative (average trade below zero).
+5. **ML mainly smooths the ride.** Over the full history the No-ML version made more money (3× the trades) with
+   more than twice the drawdown.
+6. **Slippage is not in the headline numbers.** At 0.002% per fill the 2024+ result drops from ₹2,789 to
+   ₹2,526, and at 0.005% to ₹2,309. The live-price columns above measure the real figure.
+7. Backtest candles are Binance BTCUSDT; the bot trades Delta BTCUSD (close, not identical). Funding, outages,
+   API errors and late GitHub starts are not modelled; 1-lot rounding makes real risk 0.5–2% on a given trade.
 
 ## Strategy
 
@@ -99,11 +123,36 @@ Strategy Tester: IST sessions, Monday–Friday, 25-minute exit, 1% risk sizing, 
 | Workflow | When (IST) | What |
 |---|---|---|
 | `session.yml` | Mon–Fri ~12:50 and ~18:10 | Runs `bot.py` for the London or New York session (≈ 5 h each), commits `state/`, `charts/`, `README.md` after every trade |
-| `retrain.yml` | 1st of each month, 08:30 | Downloads new Binance 5m candles, retrains the model, commits `model/` |
+| `retrain.yml` | 1st of each month, 08:30 | Downloads new Binance 5m candles, retrains the model, rebuilds the reports, commits `model/`, `data/`, `docs/` |
 
-Run locally: `pip install -r requirements.txt`, then `python bot.py` (current session),
-`python report.py` (rebuild this page), `python train.py --walkforward` (re-run the backtest),
-`python test_parity.py 2026-09-01 2026-09-27` (bot vs backtest on history).
+## Repository layout
+
+| Path | What |
+|---|---|
+| `bot.py` | The paper-trading bot (run by `session.yml`) |
+| `strategy.py` | Rules, sizing (Delta lots, 1% risk, 50x cross), features, trade simulation. One code path for backtest and bot |
+| `train.py` | Updates price history, walk-forward backtest, trains the live model (run by `retrain.yml`) |
+| `report.py`, `README_TEMPLATE.md` | Build this README and `charts/` |
+| `model/` | Live model, its cutoff, walk-forward trades and summary |
+| `state/` | Forward-test log: `trades.csv`, `signals.csv`, `runs.csv`, `state.json` |
+| `data/5m/` | Binance BTCUSDT 5-minute history, one file per month |
+| `research/` | Leverage study and the 50x/SIP backtest page (`templates/` holds the HTML) |
+| `docs/` | The HTML reports. Enable **Settings → Pages → Deploy from branch → `main` / `docs`** to view them at `https://10vulture1005.github.io/btcbot/` |
+| `tests/` | Bot-vs-backtest parity, live-quote path, SIP maths |
+| `pine/` | TradingView version (No-ML rules) |
+
+Run locally: `pip install -r requirements.txt`, then
+
+| Command | Does |
+|---|---|
+| `python bot.py` | Paper-trade the current session |
+| `python report.py` | Rebuild this README |
+| `python train.py --walkforward` | Update data, re-run the walk-forward backtest, retrain |
+| `python research/backtest50_report.py` | Rebuild `docs/backtest_50x.html` |
+| `python research/leverage_report.py` | Rebuild `docs/leverage.html` |
+| `python tests/test_parity.py 2026-09-01 2026-09-27` | Bot vs backtest on history |
+| `python tests/test_live_path.py 2026-09-01 2026-09-27` | Live-quote code path on history |
+| `node tests/test_sip.js` | SIP maths in the page vs Python |
 
 **Note:** the two session jobs use about 300 runner-hours a month. That's free on a **public**
 repository; on a private repository it is far beyond the free 2,000 minutes.

@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leverage on Delta India · 9/15 EMA + ML</title>
+<style>
+.viz-root { color-scheme: light;
+  --page:#f9f9f7; --surface-1:#fcfcfb; --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+  --series-1:#2a78d6; --series-2:#eb6834; --series-3:#1baf7a; --series-4:#eda100; --series-5:#e87ba4;
+  --good:#0ca30c; --critical:#d03b3b; --warning:#fab219; }
+@media (prefers-color-scheme: dark) { :root:where(:not([data-theme="light"])) .viz-root { color-scheme: dark;
+  --page:#0d0d0d; --surface-1:#1a1a19; --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+  --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70; --series-4:#c98500; --series-5:#d55181; } }
+:root[data-theme="dark"] .viz-root { color-scheme: dark;
+  --page:#0d0d0d; --surface-1:#1a1a19; --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+  --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70; --series-4:#c98500; --series-5:#d55181; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+.viz-root { background: var(--page); color: var(--text-primary); min-height: 100vh; padding: 28px 32px 48px;
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 1180px; margin: 0 auto; }
+h1 { font-size: 22px; margin: 0 0 4px; font-weight: 600; }
+h2 { font-size: 16px; margin: 0 0 2px; font-weight: 600; }
+.sub { color: var(--text-secondary); margin: 0 0 18px; }
+.muted { color: var(--text-muted); }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-top: 16px; }
+.lead { font-size: 15px; }
+.lead b { font-weight: 600; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+.tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.tile .label { color: var(--text-secondary); font-size: 13px; }
+.tile .value { font-size: 26px; font-weight: 600; margin: 4px 0 2px; }
+.tile .delta { font-size: 13px; color: var(--text-secondary); }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; margin-top: 8px; color: var(--text-primary); }
+.status i { width: 16px; height: 16px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  font-style: normal; font-size: 10px; color: #fff; }
+.status.good i { background: var(--good); } .status.bad i { background: var(--critical); }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 10px 0 4px; color: var(--text-secondary); font-size: 13px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; }
+.chart svg:focus, .chart rect:focus { outline: none; }
+.tip { position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); display: none; min-width: 190px; z-index: 5; }
+.tip .t { color: var(--text-muted); margin-bottom: 4px; }
+.tip .r { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.tip .r b { font-weight: 600; color: var(--text-primary); min-width: 64px; text-align: right; }
+.tip .r span { color: var(--text-secondary); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 8px; }
+th { text-align: right; color: var(--text-muted); font-weight: 500; padding: 6px 10px; border-bottom: 1px solid var(--grid); }
+td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; white-space: nowrap; }
+th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+tr.hl td { background: color-mix(in srgb, var(--series-1) 8%, transparent); }
+.pill { display: inline-flex; align-items: center; gap: 6px; }
+.pill i { width: 14px; height: 14px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-style: normal; font-size: 9px; color: #fff; }
+.pill.bad i { background: var(--critical); } .pill.good i { background: var(--good); } .pill.warn i { background: var(--warning); color: #0b0b0b; }
+ul.tight { margin: 6px 0 0; padding-left: 20px; } ul.tight li { margin: 3px 0; }
+.bar { transition: opacity .1s; } .bar.on { opacity: .75; }
+button.theme { float: right; background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit; font-size: 12px; }
+@media (max-width: 900px) { .tiles { grid-template-columns: 1fr 1fr; } .two { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="viz-root"><div class="wrap">
+<button class="theme" id="theme">Light / dark</button>
+<h1>What 100x or 200x leverage does to the 9/15 EMA + ML strategy</h1>
+<p class="sub" id="subtitle"></p>
+
+<div class="card lead" id="lead"></div>
+<div class="tiles" id="tiles"></div>
+
+<div class="card">
+  <h2>Same 1% risk per trade: cross vs isolated margin</h2>
+  <div class="muted">Paper balance in ₹. With cross margin the leverage setting changes nothing; with isolated margin, 200x puts the liquidation price closer than many stops.</div>
+  <div class="legend" id="lg1"></div>
+  <div class="chart" id="c1"></div>
+</div>
+
+<div class="card">
+  <h2>All-in sizing: the whole balance used as margin</h2>
+  <div class="muted">Paper balance in ₹, log scale (each gridline is 10×). A line that drops to the bottom means the account was wiped out.</div>
+  <div class="legend" id="lg2"></div>
+  <div class="chart" id="c2"></div>
+</div>
+
+<div class="card">
+  <h2>What actually changes profit: risk per trade</h2>
+  <div class="muted">Same trades at 100x cross margin, sized to lose 1% … 20% of the balance at the stop.</div>
+  <div class="two">
+    <div><div class="muted" style="margin-top:12px">Final balance from ₹1,500</div><div class="chart" id="b1"></div></div>
+    <div><div class="muted" style="margin-top:12px">Worst drawdown along the way</div><div class="chart" id="b2"></div></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Delta India margin math for BTCUSD</h2>
+  <div class="muted" id="margin-note"></div>
+  <table id="mt"></table>
+</div>
+
+<div class="card">
+  <h2>All scenarios</h2>
+  <table id="st"></table>
+</div>
+
+<div class="card">
+  <h2>How this was calculated</h2>
+  <ul class="tight" id="how"></ul>
+</div>
+</div></div>
+
+<script>
+const D = /*__DATA__*/null;
+const $ = id => document.getElementById(id);
+const css = v => getComputedStyle(document.querySelector('.viz-root')).getPropertyValue(v).trim();
+const inr = (v, d = 0) => (v < 0 ? '−' : '') + '₹' + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits: d, minimumFractionDigits: d});
+const pct = (v, d = 0) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d) + '%';
+const fmtDate = ms => new Date(ms).toLocaleDateString('en-IN', {day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata'});
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const txt = s => document.createTextNode(s);
+const svgText = (parent, attrs, s) => { const t = el('text', attrs, parent); t.textContent = s; return t; };
+
+// ---------------- headline
+const R = D.rows, find = (lev, sz) => R.find(r => r.lev === lev && r.sizing.startsWith(sz));
+const base = find(200, '1% risk · cross'), iso200 = find(200, '1% risk · iso'), all100 = find(100, 'All-in'), all200 = find(200, 'All-in');
+$('subtitle').textContent = `Delta Exchange India BTCUSD perpetual · ${D.meta.n} walk-forward ML trades, ${D.meta.start} → ${D.meta.end} · start ₹1,500 · 1 lot = 0.001 BTC · fee-free (every trade < 30 min) · zero slippage · liquidation checked against every 5-minute candle while a trade was open`;
+{
+  const p = $('lead');
+  p.append(txt('Leverage by itself does not change profit. '));
+  const b = document.createElement('b'); b.textContent = 'Position size does.'; p.append(b);
+  p.append(txt(` The bot sizes each trade so the stop loses 1% of the balance, which is usually 1 lot (0.001 BTC ≈ ${inr(D.meta.px * 0.001 * 85)} of BTC). That needs only about 5x of your ₹1,500, so with cross margin, 100x or 200x gives exactly the same trades and the same ${inr(base.final)} result; it only locks up less margin. High leverage hurts in two ways: with isolated margin the liquidation price can sit closer than the stop, and using the leverage to open a bigger position multiplies the risk of every trade.`));
+}
+function tile(label, value, delta, status, good) {
+  const t = document.createElement('div'); t.className = 'tile';
+  const l = document.createElement('div'); l.className = 'label'; l.textContent = label;
+  const v = document.createElement('div'); v.className = 'value'; v.textContent = value;
+  const d = document.createElement('div'); d.className = 'delta'; d.textContent = delta;
+  const s = document.createElement('div'); s.className = 'status ' + (good ? 'good' : 'bad');
+  const i = document.createElement('i'); i.textContent = good ? '✓' : '✕'; s.append(i, txt(status));
+  t.append(l, v, d, s); $('tiles').append(t);
+}
+tile('1% risk · 100x or 200x · cross margin', inr(base.final), `${pct(base.ret)} · worst drawdown ${base.maxDD.toFixed(0)}%`, 'Identical at any leverage', true);
+tile('1% risk · 200x · isolated margin', inr(iso200.final), `${pct(iso200.ret)} · ${iso200.liqs} of ${iso200.taken} trades liquidated`, 'Liquidated before the stop', false);
+tile('All-in · 100x', inr(all100.final), all100.ruined ? `wiped out by ${all100.ruined}` : pct(all100.ret), `Risks ~${Math.round(D.meta.stop_med * 100)}% of the balance per trade`, false);
+tile('All-in · 200x', inr(all200.final), all200.ruined ? `wiped out by ${all200.ruined}` : pct(all200.ret), `Risks ~${Math.round(D.meta.stop_med * 200)}% of the balance per trade`, false);
+
+// ---------------- line chart (crosshair + tooltip listing every series)
+function legend(host, series, colors) {
+  host.textContent = '';
+  series.forEach((s, k) => { const sp = document.createElement('span');
+    const sv = el('svg', {width: 16, height: 4}); el('line', {x1: 0, y1: 2, x2: 16, y2: 2, stroke: colors[k], 'stroke-width': 2, 'stroke-linecap': 'round'}, sv);
+    sp.append(sv, txt(s.name)); host.append(sp); });
+}
+function lineChart(host, series, {log = false, h = 320, floor = 1} = {}) {
+  host.textContent = '';
+  const colors = series.map((_, k) => css(`--series-${k + 1}`));
+  const W = host.clientWidth || 1000, m = {l: 70, r: 110, t: 14, b: 30};
+  const svg = el('svg', {viewBox: `0 0 ${W} ${h}`, height: h, role: 'img', 'aria-label': 'Balance over time'}, host);
+  const X = D.x, x0 = X[0], x1 = X[X.length - 1];
+  const vals = series.flatMap(s => s.y).map(v => Math.max(v, floor));
+  let y0 = Math.min(...vals), y1 = Math.max(...vals), ticks = [];
+  if (log) { y0 = Math.pow(10, Math.floor(Math.log10(y0))); y1 = Math.pow(10, Math.ceil(Math.log10(y1)));
+    for (let v = y0; v <= y1 * 1.0001; v *= 10) ticks.push(v); }
+  else { const step = [100, 200, 250, 500, 1000, 2000, 5000].find(s => (y1 - y0) / s <= 6) || 10000;
+    y0 = Math.floor(y0 / step) * step; y1 = Math.ceil(y1 / step) * step; for (let v = y0; v <= y1 + 1e-9; v += step) ticks.push(v); }
+  const sx = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r);
+  const sy = v => { v = Math.max(v, floor);
+    return log ? h - m.b - (Math.log10(v) - Math.log10(y0)) / (Math.log10(y1) - Math.log10(y0)) * (h - m.t - m.b)
+               : h - m.b - (v - y0) / (y1 - y0) * (h - m.t - m.b); };
+  for (const t of ticks) { el('line', {x1: m.l, x2: W - m.r, y1: sy(t), y2: sy(t), stroke: css('--grid'), 'stroke-width': 1}, svg);
+    svgText(svg, {x: m.l - 8, y: sy(t) + 4, 'text-anchor': 'end', fill: css('--text-muted'), 'font-size': 11}, inr(t)); }
+  for (let y = new Date(x0).getUTCFullYear(); y <= new Date(x1).getUTCFullYear(); y++) for (const mo of [0, 6]) {
+    const t = Date.UTC(y, mo, 1); if (t <= x0 || t >= x1) continue;
+    svgText(svg, {x: sx(t), y: h - 9, 'text-anchor': 'middle', fill: css('--text-muted'), 'font-size': 11},
+            new Date(t).toLocaleDateString('en-IN', {month: 'short', year: 'numeric', timeZone: 'UTC'})); }
+  el('line', {x1: m.l, x2: W - m.r, y1: h - m.b, y2: h - m.b, stroke: css('--axis'), 'stroke-width': 1}, svg);
+  if (1500 > y0 && 1500 < y1) {
+    el('line', {x1: m.l, x2: W - m.r, y1: sy(1500), y2: sy(1500), stroke: css('--axis'), 'stroke-width': 1}, svg);
+    svgText(svg, {x: m.l + 6, y: sy(1500) - 6, fill: css('--text-muted'), 'font-size': 11}, 'start ₹1,500'); }
+  const ends = [];
+  series.forEach((s, k) => {
+    const dead = s.y.findIndex(v => v <= 0), last = dead >= 0 ? dead : s.y.length - 1;
+    let d = ''; for (let i = 0; i <= last; i++) d += (i ? 'L' : 'M') + sx(X[i]).toFixed(1) + ',' + sy(s.y[i]).toFixed(1);
+    el('path', {d, fill: 'none', stroke: colors[k], 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round'}, svg);
+    ends.push({k, x: sx(X[last]), y: sy(s.y[last]), v: s.y[last], dead: dead >= 0, date: X[last]});
+  });
+  ends.forEach(e => el('circle', {cx: e.x, cy: e.y, r: 4, fill: colors[e.k], stroke: css('--surface-1'), 'stroke-width': 2}, svg));
+  // end labels at the right edge, leader lines back to each line's end
+  let prev = -1e9;
+  [...ends].sort((a, b) => a.y - b.y).forEach(e => {
+    const ly = Math.max(e.y, prev + 15); prev = ly; const lx = W - m.r + 12;
+    el('line', {x1: e.x + 6, y1: e.y, x2: lx - 4, y2: ly, stroke: css('--axis'), 'stroke-width': 1}, svg);
+    svgText(svg, {x: lx, y: ly + 4, fill: css('--text-secondary'), 'font-size': 11}, e.dead ? `wiped out ${fmtDate(e.date).slice(0, 6)}` : inr(e.v));
+  });
+  const cross = el('line', {y1: m.t, y2: h - m.b, stroke: css('--axis'), 'stroke-width': 1, visibility: 'hidden'}, svg);
+  const dots = series.map((_, k) => el('circle', {r: 4, fill: colors[k], stroke: css('--surface-1'), 'stroke-width': 2, visibility: 'hidden'}, svg));
+  const tip = document.createElement('div'); tip.className = 'tip'; host.append(tip);
+  const hit = el('rect', {x: m.l, y: m.t, width: W - m.l - m.r, height: h - m.t - m.b, fill: 'transparent', tabindex: 0}, svg);
+  const hide = () => { tip.style.display = 'none'; cross.setAttribute('visibility', 'hidden'); dots.forEach(d => d.setAttribute('visibility', 'hidden')); };
+  function show(i) {
+    const px = sx(X[i]); cross.setAttribute('x1', px); cross.setAttribute('x2', px); cross.setAttribute('visibility', 'visible');
+    dots.forEach((d, k) => { const v = series[k].y[i]; d.setAttribute('cx', px); d.setAttribute('cy', sy(v)); d.setAttribute('visibility', v > 0 ? 'visible' : 'hidden'); });
+    tip.textContent = '';
+    const t = document.createElement('div'); t.className = 't'; t.textContent = i ? `After trade ${i} · ${fmtDate(X[i])}` : 'Start'; tip.append(t);
+    series.forEach((s, k) => { const r = document.createElement('div'); r.className = 'r';
+      const sv = el('svg', {width: 14, height: 4}); el('line', {x1: 0, y1: 2, x2: 14, y2: 2, stroke: colors[k], 'stroke-width': 2}, sv);
+      const b = document.createElement('b'); b.textContent = s.y[i] <= 0 ? '₹0' : inr(s.y[i]);
+      const n = document.createElement('span'); n.textContent = s.name; r.append(sv, b, n); tip.append(r); });
+    tip.style.display = 'block';
+    const box = host.getBoundingClientRect(), scale = box.width / W;
+    let left = px * scale + 14; if (left + tip.offsetWidth > box.width) left = px * scale - tip.offsetWidth - 14;
+    tip.style.left = left + 'px'; tip.style.top = '8px';
+  }
+  const near = cx => { const box = svg.getBoundingClientRect(), v = (cx - box.left) * (W / box.width);
+    let best = 0, bd = 1e9; X.forEach((t, i) => { const d = Math.abs(sx(t) - v); if (d < bd) { bd = d; best = i; } }); return best; };
+  let cur = X.length - 1;
+  hit.addEventListener('pointermove', e => { cur = near(e.clientX); show(cur); });
+  hit.addEventListener('pointerleave', hide); hit.addEventListener('blur', hide);
+  hit.addEventListener('focus', () => show(cur));
+  hit.addEventListener('keydown', e => { if (e.key === 'ArrowRight') cur = Math.min(X.length - 1, cur + 1);
+    else if (e.key === 'ArrowLeft') cur = Math.max(0, cur - 1); else return; show(cur); e.preventDefault(); });
+  return colors;
+}
+
+// ---------------- column chart (per-bar hover)
+function barChart(host, cats, vals, fmt, axisFmt, {h = 250} = {}) {
+  host.textContent = '';
+  const W = host.clientWidth || 500, m = {l: 62, r: 8, t: 22, b: 30};
+  const svg = el('svg', {viewBox: `0 0 ${W} ${h}`, height: h, role: 'img'}, host);
+  const vmax = Math.max(...vals);
+  const step = [10, 20, 25, 50, 500, 1000, 2000, 2500, 5000].find(s => vmax / s <= 5) || 10000;
+  const top = Math.ceil(vmax / step) * step;
+  const sy = v => h - m.b - v / top * (h - m.t - m.b);
+  for (let v = 0; v <= top + 1e-9; v += step) {
+    el('line', {x1: m.l, x2: W - m.r, y1: sy(v), y2: sy(v), stroke: v ? css('--grid') : css('--axis'), 'stroke-width': 1}, svg);
+    svgText(svg, {x: m.l - 8, y: sy(v) + 4, 'text-anchor': 'end', fill: css('--text-muted'), 'font-size': 11}, axisFmt(v)); }
+  const band = (W - m.l - m.r) / cats.length, bw = Math.min(24, band * 0.55);
+  const tip = document.createElement('div'); tip.className = 'tip'; host.append(tip);
+  cats.forEach((c, i) => {
+    const cx = m.l + band * (i + 0.5), y = sy(vals[i]), x = cx - bw / 2, r = Math.min(4, Math.max(0, (h - m.b - y) / 2));
+    const d = `M${x},${h - m.b}L${x},${y + r}Q${x},${y} ${x + r},${y}L${x + bw - r},${y}Q${x + bw},${y} ${x + bw},${y + r}L${x + bw},${h - m.b}Z`;
+    const bar = el('path', {d, fill: css('--series-1'), class: 'bar'}, svg);
+    svgText(svg, {x: cx, y: y - 6, 'text-anchor': 'middle', fill: css('--text-secondary'), 'font-size': 11}, fmt(vals[i]));
+    svgText(svg, {x: cx, y: h - 9, 'text-anchor': 'middle', fill: css('--text-muted'), 'font-size': 11}, c);
+    const hitR = el('rect', {x: m.l + band * i, y: m.t, width: band, height: h - m.t - m.b, fill: 'transparent', tabindex: 0}, svg);
+    const on = () => { bar.classList.add('on'); tip.textContent = '';
+      const t = document.createElement('div'); t.className = 't'; t.textContent = `${c} risk per trade`;
+      const rr = document.createElement('div'); rr.className = 'r'; const b = document.createElement('b'); b.textContent = fmt(vals[i]); rr.append(b);
+      const row = D.risk[i]; const s2 = document.createElement('span'); s2.textContent = row.ruined ? `wiped out ${row.ruined}` : `${pct(row.ret)} return`; rr.append(s2);
+      tip.append(t, rr); tip.style.display = 'block';
+      const box = host.getBoundingClientRect(), sc = box.width / W;
+      tip.style.left = Math.max(0, Math.min(cx * sc - tip.offsetWidth / 2, box.width - tip.offsetWidth)) + 'px';
+      tip.style.top = Math.max(0, y * sc - 58) + 'px'; };
+    const off = () => { bar.classList.remove('on'); tip.style.display = 'none'; };
+    hitR.addEventListener('pointerenter', on); hitR.addEventListener('focus', on);
+    hitR.addEventListener('pointerleave', off); hitR.addEventListener('blur', off);
+  });
+}
+
+// ---------------- tables
+function table(host, head, rows, hl) {
+  host.textContent = ''; const tr = document.createElement('tr');
+  head.forEach(h => { const th = document.createElement('th'); th.textContent = h; tr.append(th); }); host.append(tr);
+  rows.forEach((r, i) => { const t = document.createElement('tr'); if (hl && hl(i)) t.className = 'hl';
+    r.forEach(c => { const td = document.createElement('td');
+      if (c && typeof c === 'object') { const s = document.createElement('span'); s.className = 'pill ' + c.cls;
+        const ic = document.createElement('i'); ic.textContent = c.cls === 'good' ? '✓' : c.cls === 'warn' ? '!' : '✕'; s.append(ic, txt(c.text)); td.append(s); }
+      else td.textContent = c;
+      t.append(td); });
+    host.append(t); });
+}
+$('margin-note').textContent = `Initial margin = 1 ÷ leverage; maintenance margin = 0.25% of the position (Delta API). With isolated margin a position is liquidated once price moves (1 ÷ leverage − 0.25%) against it. The median stop on these trades is ${D.meta.stop_med.toFixed(2)}% from entry. Margin per lot uses BTC ≈ $${Math.round(D.meta.px).toLocaleString('en-IN')} and ₹85 per $.`;
+table($('mt'), ['Leverage', 'Initial margin', 'Margin for 1 lot', 'Liquidation distance (isolated)', 'Trades whose stop is farther than liquidation', 'Trades liquidated (isolated, 1% risk)'],
+  D.margin.map(r => [r.lev + 'x', r.im.toFixed(1) + '%', inr(r.lot_margin, 1), r.liq.toFixed(2) + '%', r.stop_beyond.toFixed(0) + '%', r.mae_beyond.toFixed(0) + '%']));
+table($('st'), ['Leverage', 'Sizing', 'Final balance', 'Return', 'Worst drawdown', 'Liquidations', 'Typical lots', 'Outcome'],
+  D.rows.map(r => [r.lev + 'x', r.sizing, inr(r.final), pct(r.ret), r.maxDD.toFixed(1) + '%', r.liqs, r.med_lots.toFixed(0),
+    r.ruined ? {cls: 'bad', text: 'Wiped out ' + r.ruined} : r.ret < 0 ? {cls: 'bad', text: 'Loss'}
+      : r.maxDD > 50 ? {cls: 'warn', text: 'Profit, extreme drawdown'} : {cls: 'good', text: 'Profit'}]),
+  i => D.rows[i].sizing.startsWith('1% risk · cross'));
+[`Trades: the ML strategy's walk-forward backtest (model retrained monthly on past data only), Monday–Friday, London 13:30–17:30 IST and New York 18:30–22:30 IST; ${D.meta.win.toFixed(1)}% of trades won.`,
+ '1% risk sizing: whole lots so a stop-out loses 1% of the balance; 1 lot when that rounds to 0 but risks ≤ 2%, otherwise the trade is skipped (the bot\'s rule). Lots are also capped by the margin available at the chosen leverage, which is why 10x and 25x end slightly lower.',
+ 'All-in sizing: as many lots as the whole balance can margin at the chosen leverage.',
+ 'Liquidation: if price moved against the trade by the liquidation distance (5-minute highs/lows while it was open) before a closer stop, the position margin is lost. Cross margin backs the position with the whole balance.',
+ 'Not modelled: slippage (the forward test is measuring it), funding payments, liquidation fees. This is a simulation of past trades, not a forecast.'
+].forEach(s => { const li = document.createElement('li'); li.textContent = s; $('how').append(li); });
+
+function render() {
+  legend($('lg1'), D.c1, lineChart($('c1'), D.c1));
+  legend($('lg2'), D.c2, lineChart($('c2'), D.c2, {log: true, floor: 1}));
+  barChart($('b1'), D.risk.map(r => r.risk + '%'), D.risk.map(r => r.final), v => inr(v), v => inr(v));
+  barChart($('b2'), D.risk.map(r => r.risk + '%'), D.risk.map(r => r.maxDD), v => v.toFixed(0) + '%', v => v + '%');
+}
+render();
+let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 150); });
+$('theme').addEventListener('click', () => { const r = document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  r.dataset.theme = dark ? 'light' : 'dark'; render(); });
+</script>
+</body>
+</html>

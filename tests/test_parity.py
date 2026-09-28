@@ -1,9 +1,13 @@
 """Replay a period through bot.py bar by bar and compare with the vectorised backtest (strategy.py).
 
-    python test_parity.py 2026-08-01 2026-09-27
+    python tests/test_parity.py 2026-08-01 2026-09-27
 """
+import os
 import subprocess
 import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
 
 import numpy as np
 import pandas as pd
@@ -13,8 +17,8 @@ import strategy as S
 
 
 def main(a, b):
-    subprocess.run([sys.executable, "bot.py", "--replay", a, b], check=True)
-    got = pd.read_csv("state/replay_trades.csv", parse_dates=["signal_time"])
+    subprocess.run([sys.executable, os.path.join(ROOT, "bot.py"), "--replay", a, b], check=True, cwd=ROOT)
+    got = pd.read_csv(os.path.join(ROOT, "state", "replay_trades.csv"), parse_dates=["signal_time"])
     import train
     hist = train.load_history()
     t0, t1 = pd.Timestamp(a, tz="UTC"), pd.Timestamp(b, tz="UTC")
