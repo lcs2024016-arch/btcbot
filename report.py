@@ -8,6 +8,7 @@ import os
 import matplotlib
 
 matplotlib.use("Agg")
+matplotlib.rcParams["svg.hashsalt"] = "ema915"   # deterministic SVG ids: no diff when nothing changed
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
