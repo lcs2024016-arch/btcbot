@@ -197,8 +197,9 @@ class Account:
 
 
 class Bot:
-    def __init__(self, src, model, mode="live", commit=False):
+    def __init__(self, src, model, mode="live", commit=False, live=None):
         self.src, self.model, self.mode, self.commit = src, model, mode, commit
+        self.live = live                             # live.LiveTrader: real orders for the ML signals
         os.makedirs(STATE, exist_ok=True)
         self.state_path = os.path.join(STATE, "state.json")
         st = {}
@@ -310,6 +311,13 @@ class Bot:
             return
         c = c.copy()
         c["p"] = self.model.score(df.iloc[: i + 1], c)
+        if live and self.live is not None:                  # real order first, paper bookkeeping after
+            ml = c[c.p >= self.model.cut]
+            if not ml.empty:
+                r = ml.iloc[0]
+                self.live.enter(dict(dir=int(r.dir), e=float(r.e), sl=float(r.sl), stop=float(r.stop),
+                                     tgt=float(r.tgt), signal_time=str(t), kind=S.PRIO[int(r.prio)],
+                                     p=float(r.p), session=r.session))
         quote, latency = (None, np.nan)
         if live:
             try:
@@ -447,6 +455,9 @@ class Bot:
     def publish(self, why):
         if self.mode != "live":
             return
+        if self.live is not None:                    # local live run: keep the repo README/state untouched
+            self.save()
+            return
         self.save()
         try:
             import report
@@ -489,6 +500,8 @@ class Bot:
             nxt = self.last_bar + 2 * BAR                   # close time of the next bar
             while now_utc() < nxt + pd.Timedelta("2s"):
                 self.poll_shadows()
+                if self.live is not None:
+                    self.live.poll()
                 time.sleep(POLL_S if any(s.get("exit") is None for s in self.shadows) else 1.0)
             for attempt in range(20):
                 try:
@@ -506,9 +519,11 @@ class Bot:
                 self.publish("trade closed")
             flat = all(a.pos is None and a.pending is None for a in self.accounts.values())
             done = self.last_bar + BAR >= sess_end + pd.Timedelta("30min") and flat and \
-                not any(s.get("exit") is None for s in self.shadows)
+                not any(s.get("exit") is None for s in self.shadows) and (self.live is None or self.live.flat())
             if done or now_utc() > hard_stop:
                 break
+        if self.live is not None:
+            self.live.shutdown()
         self.flush_shadows()
         self.publish("session end")
 
@@ -541,8 +556,20 @@ def main():
     ap.add_argument("--replay", nargs=2, metavar=("START", "END"))
     ap.add_argument("--commit", action="store_true", help="git commit + push results (GitHub Actions)")
     ap.add_argument("--minutes", type=float, help="stop after N minutes (testing)")
+    ap.add_argument("--live", action="store_true",
+                    help="also trade the ML signals on Delta (dry run unless LIVE_TRADING=yes; see live.py)")
+    ap.add_argument("--all-day", action="store_true", help="run London, then New York, then exit")
     a = ap.parse_args()
     model = Model()
+    trader = None
+    if a.live:
+        global STATE
+        import live
+        STATE = os.environ.get("FT_STATE", os.path.join(HERE, "live_state", "paper"))   # never the repo's state/
+        a.commit = False
+        trader = live.LiveTrader()
+        if not trader.preflight():
+            raise SystemExit("live preflight failed - see logs/ (run: python live.py check)")
 
     if a.replay:
         import train
@@ -565,7 +592,16 @@ def main():
     if now.dayofweek not in S.WEEKDAYS:
         log(f"{now.tz_convert(S.IST):%A} - no trading on weekends")
         return
-    name = pick_session(now) if a.session == "auto" else {"london": "London", "newyork": "New York"}[a.session]
+    if a.all_day:
+        names = ["London", "New York"]
+    else:
+        names = [pick_session(now) if a.session == "auto" else {"london": "London", "newyork": "New York"}[a.session]]
+    for name in names:
+        run_session(name, model, a, trader)
+
+
+def run_session(name, model, a, trader=None):
+    now = now_utc()
     s0, s1 = session_window(name, now)
     log(f"{name} session: {ist(s0)} -> {ist(s1)} (entries), model cut {model.cut:.3f}")
     if now > s1 + pd.Timedelta("30min"):
@@ -575,7 +611,7 @@ def main():
     if wait > 0:
         log(f"waiting {wait / 60:.0f} min for the session")
         time.sleep(wait)
-    bot = Bot(pick_source(), model, commit=a.commit)
+    bot = Bot(pick_source(), model, commit=a.commit, live=trader)
     t_start = now_utc()
     bot.run_live(s1, a.minutes)
     with open(os.path.join(STATE, "runs.csv"), "a") as fh:

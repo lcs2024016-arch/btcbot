@@ -111,6 +111,21 @@ The gap between the two is the slippage the backtest cannot see.
 | Margin | **50× cross margin**. 1 lot locks ≈ ₹125; liquidation stays ≥ 20% away vs a ~0.27% stop. Lots are capped so liquidation is always ≥ 2× farther than the stop. |
 | Why not 100×/200× | At fixed 1% risk, leverage changes the margin locked, not profit: 50×, 100× and 200× cross give the same ₹1,500 → ₹2,789 (2024–26 backtest). 200× **isolated** liquidates after a 0.25% move, closer than most stops: ₹890 with 69 liquidations. Using the leverage for bigger positions (all-in 100×/200×) wiped the account within weeks. |
 
+## Live trading (on your own machine)
+
+Delta India API keys with trading permission only work from **whitelisted IPs**, so live trading runs on your
+machine, not on GitHub. Only the ML signals are traded; every entry carries a stop-loss and take-profit at Delta.
+
+1. Put your key in `btcbot\.env` (outside this repo) or `ema915-forward\.env` (git-ignored); see `.env.example`.
+   `LIVE_TRADING=yes` sends real orders, anything else is a dry run. `TEST_MODE=yes` is for a tiny balance:
+   always 1 lot, 100x cross, max 3 trades a day.
+2. Whitelist your current IPv4 on the key, then `python live.py check` (read-only; shows the IP Delta sees).
+3. `python bot.py --live --all-day` (or double-click `run_live.bat`) trades today's London and New York sessions.
+4. Emergency: `python live.py flatten --yes` cancels all BTCUSD orders and closes the position.
+
+Logs (git-ignored): `logs/live_YYYY-MM-DD.log` (every API call and decision, IST), `logs/live_orders.csv`,
+`logs/live_trades.csv` (fills, fees, slippage, R, P&L in ₹). Test: `python tests/test_live_mock.py`.
+
 ## Pine Script (TradingView)
 
 [`pine/ema915_v3_london_ny.pine`](pine/ema915_v3_london_ny.pine) is the same rules for TradingView's
@@ -141,6 +156,7 @@ Strategy Tester: IST sessions, Monday–Friday, 25-minute exit, 1% risk sizing, 
 | `docs/` | The HTML reports. Enable **Settings → Pages → Deploy from branch → `main` / `docs`** to view them at `https://10vulture1005.github.io/btcbot/` |
 | `tests/` | Bot-vs-backtest parity, live-quote path, SIP maths |
 | `pine/` | TradingView version (No-ML rules) |
+| `live.py`, `run_live.bat` | Live trading on Delta from your machine (see above) |
 
 Run locally: `pip install -r requirements.txt`, then
 

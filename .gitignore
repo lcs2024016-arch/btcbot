@@ -3,3 +3,7 @@ __pycache__/
 state/replay_*
 state/*.png
 state/*.log
+# live trading on your own machine: keys, logs and live state never go to GitHub
+.env
+logs/
+live_state/
