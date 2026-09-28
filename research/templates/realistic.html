@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Realistic equity outlook · 9/15 EMA + ML · 50x cross · ₹1,500</title>
+<style>
+.viz-root { color-scheme: light;
+  --page:#f9f9f7; --surface-1:#fcfcfb; --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
+  --series-1:#2a78d6; --series-2:#eb6834; --good:#0ca30c; --critical:#d03b3b; --warning:#fab219; --success-text:#006300; }
+@media (prefers-color-scheme: dark) { :root:where(:not([data-theme="light"])) .viz-root { color-scheme: dark;
+  --page:#0d0d0d; --surface-1:#1a1a19; --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10); --series-1:#3987e5; --series-2:#d95926; --success-text:#0ca30c; } }
+:root[data-theme="dark"] .viz-root { color-scheme: dark;
+  --page:#0d0d0d; --surface-1:#1a1a19; --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10); --series-1:#3987e5; --series-2:#d95926; --success-text:#0ca30c; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+.viz-root { background: var(--page); color: var(--text-primary); min-height: 100vh; padding: 28px 32px 48px;
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.wrap { max-width: 1180px; margin: 0 auto; }
+h1 { font-size: 22px; margin: 0 0 4px; font-weight: 600; }
+h2 { font-size: 16px; margin: 0 0 2px; font-weight: 600; }
+.sub { color: var(--text-secondary); margin: 0 0 16px; }
+.muted { color: var(--text-muted); }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-top: 16px; }
+.lead { font-size: 15px; } .lead b { font-weight: 600; }
+.filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface-1); }
+.seg button { border: 0; background: transparent; color: var(--text-secondary); padding: 7px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: color-mix(in srgb, var(--series-1) 14%, transparent); color: var(--text-primary); font-weight: 600; }
+.tiles { display: grid; grid-template-columns: 1.3fr repeat(4, 1fr); gap: 12px; margin-top: 14px; }
+.tile { background: var(--page); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.tile .label { color: var(--text-secondary); font-size: 13px; }
+.tile .value { font-size: 24px; font-weight: 600; margin: 4px 0 2px; }
+.tile.hero .value { font-size: 44px; line-height: 1.05; }
+.tile .delta { font-size: 12px; color: var(--text-secondary); }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; margin-top: 6px; }
+.status i { width: 15px; height: 15px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-style: normal; font-size: 10px; color: #fff; }
+.status.bad i { background: var(--critical); } .status.warn i { background: var(--warning); color: #0b0b0b; } .status.good i { background: var(--good); }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 10px 0 4px; color: var(--text-secondary); font-size: 13px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.chart { position: relative; } .chart svg { display: block; width: 100%; } .chart rect:focus { outline: none; }
+.tip { position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); display: none; min-width: 200px; z-index: 5; }
+.tip .t { color: var(--text-muted); margin-bottom: 4px; }
+.tip .r { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.tip .r b { font-weight: 600; color: var(--text-primary); min-width: 64px; text-align: right; }
+.tip .r span { color: var(--text-secondary); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 8px; }
+th { text-align: right; color: var(--text-muted); font-weight: 500; padding: 6px 10px; border-bottom: 1px solid var(--grid); }
+td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; white-space: nowrap; }
+th.l, td.l { text-align: left; }
+tr.hl td { background: color-mix(in srgb, var(--series-1) 8%, transparent); }
+.up { color: var(--success-text); } .down { color: var(--critical); }
+ul.tight { margin: 6px 0 0; padding-left: 20px; } ul.tight li { margin: 4px 0; }
+button.theme { float: right; background: var(--surface-1); color: var(--text-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit; font-size: 12px; }
+@media (max-width: 1000px) { .tiles { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<div class="viz-root"><div class="wrap">
+<button class="theme" id="theme">Light / dark</button>
+<h1>Realistic equity outlook · 9/15 EMA + ML · 50x cross margin · ₹1,500</h1>
+<p class="sub" id="subtitle"></p>
+
+<div class="card lead" id="lead"></div>
+
+<div class="card">
+  <h2>The past, re-priced realistically (Jan 2024 → now)</h2>
+  <div class="muted" id="h-sub"></div>
+  <div class="legend" id="lg1"></div>
+  <div class="chart" id="c1"></div>
+  <table id="hyears"></table>
+</div>
+
+<div class="card">
+  <h2>The next 12 months: a range, not a line</h2>
+  <div class="muted" id="mc-sub"></div>
+  <div class="filters">
+    <span class="muted">If the real edge is</span>
+    <div class="seg" role="group" aria-label="Edge assumption" id="edgeseg">
+      <button data-e="measured">as measured (realistic costs)</button>
+      <button data-e="half" aria-pressed="true">half of that</button>
+      <button data-e="none">zero</button>
+    </div>
+    <span class="muted" style="margin-left:8px">Monthly SIP</span>
+    <div class="seg" role="group" aria-label="Monthly SIP" id="sipseg">
+      <button data-s="0" aria-pressed="true">None</button>
+      <button data-s="500">₹500</button>
+    </div>
+  </div>
+  <div class="tiles" id="tiles"></div>
+  <div class="legend" id="lg2"></div>
+  <div class="chart" id="c2"></div>
+</div>
+
+<div class="card">
+  <h2>All scenarios after 12 months</h2>
+  <table id="mctable"></table>
+</div>
+
+<div class="card">
+  <h2>Why these haircuts</h2>
+  <ul class="tight" id="why"></ul>
+</div>
+</div></div>
+
+<script>
+const D = /*__DATA__*/null;
+const $ = id => document.getElementById(id);
+const css = v => getComputedStyle(document.querySelector('.viz-root')).getPropertyValue(v).trim();
+const inr = (v, d = 0) => (v < 0 ? '−' : '') + '₹' + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits: d, minimumFractionDigits: d});
+const sinr = v => (v > 0 ? '+' : '') + inr(v);
+const pct = (v, d = 0) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d) + '%';
+const rr = v => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(3) + 'R';
+const fmtDate = ms => new Date(ms).toLocaleDateString('en-IN', {day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata'});
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, a = {}, p) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+const txt = s => document.createTextNode(s);
+const svgText = (p, a, s) => { const t = el('text', a, p); t.textContent = s; return t; };
+const H = D.hist, M = D.meta;
+let EDGE = 'half', SIP = 0;
+const EDGE_NAME = {measured: 'as measured', half: 'half of measured', none: 'zero'};
+
+$('subtitle').textContent = `Delta India BTCUSD 5-minute · Mon–Fri, London 13:30–17:30 IST + New York 18:30–22:30 IST · 1% risk, 50x cross, whole lots of 0.001 BTC · fee-free (< 30 min) · ${H.realistic.n} ML trades ${M.start} → ${M.end} · ${M.paths.toLocaleString('en-IN')} simulated years per scenario`;
+{
+  const p = $('lead'), b = s => { const e = document.createElement('b'); e.textContent = s; return e; };
+  p.append(txt('Short version: '), b(`the backtest headline (₹1,500 → ${inr(H.headline.final)}) is the best case.`),
+    txt(` With realistic costs the same trades end at ${inr(H.realistic.final)}. Because the strategy was chosen with hindsight, the honest planning assumption is that the live edge is `),
+    b('about half of that or less'),
+    txt(`. At half the edge a year most likely ends near ${inr(D.mc.half_0.med)} from ₹1,500, the bad 5% of years end at or below ${inr(D.mc.half_0.p5)}, and there is about a ${Math.round(D.mc.half_0.p_loss)}% chance of finishing the year below where you started. If the edge turns out to be zero, expect a slow bleed with a ${Math.round(D.mc.none_0.p_loss)}% chance of a losing year.`));
+}
+
+function legend(host, items) { host.textContent = '';
+  items.forEach(it => { const sp = document.createElement('span'); const sv = el('svg', {width: 18, height: 10});
+    if (it.band) el('rect', {x: 0, y: 1, width: 18, height: 8, rx: 2, fill: it.color, 'fill-opacity': it.op}, sv);
+    else { const a = {x1: 0, y1: 5, x2: 18, y2: 5, stroke: it.color, 'stroke-width': 2, 'stroke-linecap': 'round'}; if (it.dash) a['stroke-dasharray'] = '4 3'; el('line', a, sv); }
+    sp.append(sv, txt(it.name)); host.append(sp); }); }
+
+function axes(svg, W, h, m, y0, y1, step, fmt) {
+  const sy = v => h - m.b - (v - y0) / (y1 - y0) * (h - m.t - m.b);
+  for (let v = y0; v <= y1 + 1e-9; v += step) { el('line', {x1: m.l, x2: W - m.r, y1: sy(v), y2: sy(v), stroke: css('--grid'), 'stroke-width': 1}, svg);
+    svgText(svg, {x: m.l - 8, y: sy(v) + 4, 'text-anchor': 'end', fill: css('--text-muted'), 'font-size': 11}, fmt(v)); }
+  el('line', {x1: m.l, x2: W - m.r, y1: h - m.b, y2: h - m.b, stroke: css('--axis'), 'stroke-width': 1}, svg);
+  return sy;
+}
+const niceStep = span => [50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000].find(s => span / s <= 6) || 20000;
+
+// ---------- chart 1: history, three curves
+function histChart() {
+  const host = $('c1'); host.textContent = '';
+  const S = [{name: `Realistic (${M.real_slip.toFixed(3)}% slippage, stop-first fills)`, d: H.realistic, color: css('--series-1')},
+             {name: `Harsh (${M.harsh_slip.toFixed(3)}% slippage, stop-first fills)`, d: H.harsh, color: css('--series-2')},
+             {name: 'Backtest headline (no slippage)', d: H.headline, color: css('--text-muted'), dash: true}];
+  legend($('lg1'), S);
+  const W = host.clientWidth || 1000, h = 320, m = {l: 64, r: 84, t: 12, b: 30};
+  const svg = el('svg', {viewBox: `0 0 ${W} ${h}`, height: h, role: 'img'}, host);
+  const all = S.flatMap(s => s.d.eq), x0 = S[0].d.t[0], x1 = Math.max(...S.map(s => s.d.t[s.d.t.length - 1]));
+  const step = niceStep(Math.max(...all) - Math.min(...all));
+  const y0 = Math.floor(Math.min(...all) / step) * step, y1 = Math.ceil(Math.max(...all) / step) * step;
+  const sy = axes(svg, W, h, m, y0, y1, step, v => inr(v)), sx = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r);
+  el('line', {x1: m.l, x2: W - m.r, y1: sy(1500), y2: sy(1500), stroke: css('--axis'), 'stroke-width': 1}, svg);
+  svgText(svg, {x: m.l + 6, y: sy(1500) - 6, fill: css('--text-muted'), 'font-size': 11}, 'start ₹1,500');
+  for (let y = new Date(x0).getUTCFullYear(); y <= new Date(x1).getUTCFullYear(); y++) for (const mo of [0, 6]) { const t = Date.UTC(y, mo, 1); if (t <= x0 || t >= x1) continue;
+    svgText(svg, {x: sx(t), y: h - 9, 'text-anchor': 'middle', fill: css('--text-muted'), 'font-size': 11}, new Date(t).toLocaleDateString('en-IN', {month: 'short', year: 'numeric', timeZone: 'UTC'})); }
+  const ends = [];
+  [...S].reverse().forEach(s => { let d = ''; s.d.t.forEach((t, i) => d += (i ? 'L' : 'M') + sx(t).toFixed(1) + ',' + sy(s.d.eq[i]).toFixed(1));
+    const a = {d, fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linejoin': 'round'}; if (s.dash) a['stroke-dasharray'] = '5 4'; el('path', a, svg);
+    ends.push({x: sx(s.d.t[s.d.t.length - 1]), y: sy(s.d.final), v: s.d.final, c: s.color}); });
+  ends.forEach(e => el('circle', {cx: e.x, cy: e.y, r: 4, fill: e.c, stroke: css('--surface-1'), 'stroke-width': 2}, svg));
+  let prev = -1e9; [...ends].sort((a, b) => a.y - b.y).forEach(e => { const ly = Math.max(e.y, prev + 15); prev = ly;
+    el('line', {x1: e.x + 6, y1: e.y, x2: W - m.r + 8, y2: ly, stroke: css('--axis'), 'stroke-width': 1}, svg);
+    svgText(svg, {x: W - m.r + 12, y: ly + 4, fill: css('--text-secondary'), 'font-size': 11}, inr(e.v)); });
+  // crosshair
+  const cross = el('line', {y1: m.t, y2: h - m.b, stroke: css('--axis'), 'stroke-width': 1, visibility: 'hidden'}, svg);
+  const tip = document.createElement('div'); tip.className = 'tip'; host.append(tip);
+  const hit = el('rect', {x: m.l, y: m.t, width: W - m.l - m.r, height: h - m.t - m.b, fill: 'transparent', tabindex: 0}, svg);
+  const T = S[0].d.t; let cur = T.length - 1;
+  const show = i => { cur = i; const px = sx(T[i]); cross.setAttribute('x1', px); cross.setAttribute('x2', px); cross.setAttribute('visibility', 'visible');
+    tip.textContent = ''; const hd = document.createElement('div'); hd.className = 't'; hd.textContent = i ? `After trade ${i} · ${fmtDate(T[i])}` : 'Start'; tip.append(hd);
+    S.forEach(s => { const r = document.createElement('div'); r.className = 'r'; const sv = el('svg', {width: 14, height: 4});
+      const a = {x1: 0, y1: 2, x2: 14, y2: 2, stroke: s.color, 'stroke-width': 2}; if (s.dash) a['stroke-dasharray'] = '3 2'; el('line', a, sv);
+      const b = document.createElement('b'); b.textContent = inr(s.d.eq[Math.min(i, s.d.eq.length - 1)]); const n = document.createElement('span'); n.textContent = s.name.split(' (')[0]; r.append(sv, b, n); tip.append(r); });
+    tip.style.display = 'block'; const box = host.getBoundingClientRect(), sc = box.width / W; let left = px * sc + 14; if (left + tip.offsetWidth > box.width) left = px * sc - tip.offsetWidth - 14; tip.style.left = left + 'px'; tip.style.top = '8px'; };
+  hit.addEventListener('pointermove', e => { const box = svg.getBoundingClientRect(), v = (e.clientX - box.left) * (W / box.width); let best = 0, bd = 1e9; T.forEach((t, i) => { const dd = Math.abs(sx(t) - v); if (dd < bd) { bd = dd; best = i; } }); show(best); });
+  const hide = () => { tip.style.display = 'none'; cross.setAttribute('visibility', 'hidden'); };
+  hit.addEventListener('pointerleave', hide); hit.addEventListener('blur', hide); hit.addEventListener('focus', () => show(cur));
+  hit.addEventListener('keydown', e => { if (e.key === 'ArrowRight') show(Math.min(T.length - 1, cur + 1)); else if (e.key === 'ArrowLeft') show(Math.max(0, cur - 1)); else return; e.preventDefault(); });
+}
+
+// ---------- chart 2: fan
+function fanChart() {
+  const host = $('c2'); host.textContent = '';
+  const r = D.mc[`${EDGE}_${SIP}`], q = r.q, c = css('--series-1');
+  legend($('lg2'), [{name: 'Middle 50% of simulated years', band: true, color: c, op: 0.28}, {name: '90% of simulated years (5th–95th percentile)', band: true, color: c, op: 0.10},
+                    {name: 'Median year', color: c}, {name: SIP ? 'Money put in' : 'Start ₹1,500', color: css('--text-muted'), dash: true}]);
+  const W = host.clientWidth || 1000, h = 340, m = {l: 64, r: 92, t: 12, b: 30};
+  const svg = el('svg', {viewBox: `0 0 ${W} ${h}`, height: h, role: 'img'}, host);
+  const investedLine = [...Array(13).keys()].map(k => 1500 + SIP * Math.max(0, k - 1));
+  const lo = Math.min(...q[0], ...investedLine), hi = Math.max(...q[4], ...investedLine);
+  const step = niceStep(hi - lo), y0 = Math.max(0, Math.floor(lo / step) * step), y1 = Math.ceil(hi / step) * step;
+  const sy = axes(svg, W, h, m, y0, y1, step, v => inr(v)), sx = k => m.l + k / 12 * (W - m.l - m.r);
+  for (let k = 0; k <= 12; k += 3) svgText(svg, {x: sx(k), y: h - 9, 'text-anchor': 'middle', fill: css('--text-muted'), 'font-size': 11}, k === 0 ? 'now' : `month ${k}`);
+  const band = (a, b, op) => { let d = ''; for (let k = 0; k <= 12; k++) d += (k ? 'L' : 'M') + sx(k) + ',' + sy(q[a][k]); for (let k = 12; k >= 0; k--) d += 'L' + sx(k) + ',' + sy(q[b][k]); el('path', {d: d + 'Z', fill: c, 'fill-opacity': op}, svg); };
+  band(4, 0, 0.10); band(3, 1, 0.20);
+  let d = ''; for (let k = 0; k <= 12; k++) d += (k ? 'L' : 'M') + sx(k) + ',' + sy(investedLine[k]);
+  el('path', {d, fill: 'none', stroke: css('--text-muted'), 'stroke-width': 2, 'stroke-dasharray': '5 4'}, svg);
+  d = ''; for (let k = 0; k <= 12; k++) d += (k ? 'L' : 'M') + sx(k) + ',' + sy(q[2][k]);
+  el('path', {d, fill: 'none', stroke: c, 'stroke-width': 2, 'stroke-linejoin': 'round'}, svg);
+  el('circle', {cx: sx(12), cy: sy(q[2][12]), r: 4, fill: c, stroke: css('--surface-1'), 'stroke-width': 2}, svg);
+  const labs = [[q[4][12], `best 5%: ${inr(q[4][12])}`], [q[2][12], `median: ${inr(q[2][12])}`], [q[0][12], `worst 5%: ${inr(q[0][12])}`]];
+  let prev = -1e9; labs.map(([v, s]) => ({y: sy(v), s})).sort((a, b) => a.y - b.y).forEach(o => { const ly = Math.max(o.y, prev + 15); prev = ly;
+    svgText(svg, {x: W - m.r + 8, y: ly + 4, fill: css('--text-secondary'), 'font-size': 11}, o.s); });
+  const cross = el('line', {y1: m.t, y2: h - m.b, stroke: css('--axis'), 'stroke-width': 1, visibility: 'hidden'}, svg);
+  const tip = document.createElement('div'); tip.className = 'tip'; host.append(tip);
+  const hit = el('rect', {x: m.l, y: m.t, width: W - m.l - m.r, height: h - m.t - m.b, fill: 'transparent', tabindex: 0}, svg);
+  let cur = 12;
+  const show = k => { cur = k; const px = sx(k); cross.setAttribute('x1', px); cross.setAttribute('x2', px); cross.setAttribute('visibility', 'visible');
+    tip.textContent = ''; const hd = document.createElement('div'); hd.className = 't'; hd.textContent = k ? `End of month ${k}` : 'Now'; tip.append(hd);
+    [['best 5% above', q[4][k]], ['upper quarter', q[3][k]], ['median', q[2][k]], ['lower quarter', q[1][k]], ['worst 5% below', q[0][k]], [SIP ? 'money put in' : 'start', investedLine[k]]]
+      .forEach(([n, v]) => { const r2 = document.createElement('div'); r2.className = 'r'; const b = document.createElement('b'); b.textContent = inr(v); const s = document.createElement('span'); s.textContent = n; r2.append(b, s); tip.append(r2); });
+    tip.style.display = 'block'; const box = host.getBoundingClientRect(), sc = box.width / W; let left = px * sc + 14; if (left + tip.offsetWidth > box.width) left = px * sc - tip.offsetWidth - 14; tip.style.left = left + 'px'; tip.style.top = '8px'; };
+  hit.addEventListener('pointermove', e => { const box = svg.getBoundingClientRect(), v = (e.clientX - box.left) * (W / box.width); show(Math.max(0, Math.min(12, Math.round((v - m.l) / (W - m.l - m.r) * 12)))); });
+  const hide = () => { tip.style.display = 'none'; cross.setAttribute('visibility', 'hidden'); };
+  hit.addEventListener('pointerleave', hide); hit.addEventListener('blur', hide); hit.addEventListener('focus', () => show(cur));
+  hit.addEventListener('keydown', e => { if (e.key === 'ArrowRight') show(Math.min(12, cur + 1)); else if (e.key === 'ArrowLeft') show(Math.max(0, cur - 1)); else return; e.preventDefault(); });
+
+  const tl = $('tiles'); tl.textContent = '';
+  const tile = (label, value, delta, st) => { const t = document.createElement('div'); t.className = 'tile' + (st === 'hero' ? ' hero' : '');
+    const l = document.createElement('div'); l.className = 'label'; l.textContent = label; const v = document.createElement('div'); v.className = 'value'; v.textContent = value;
+    const dd = document.createElement('div'); dd.className = 'delta'; dd.textContent = delta; t.append(l, v, dd);
+    if (st && st !== 'hero') { const s = document.createElement('div'); s.className = 'status ' + st[0]; const i = document.createElement('i'); i.textContent = st[0] === 'good' ? '✓' : '!'; s.append(i, txt(st[1])); t.append(s); }
+    tl.append(t); };
+  tile('Median year ends at', inr(r.med), `${pct((r.med / r.invested - 1) * 100)} on ${inr(r.invested)} put in`, 'hero');
+  tile('Bad year (worst 5%)', inr(r.p5), `${pct((r.p5 / r.invested - 1) * 100)} or worse, 1 year in 20`);
+  tile('Good year (best 5%)', inr(r.p95), `${pct((r.p95 / r.invested - 1) * 100)} or better, 1 year in 20`);
+  tile('Chance of a losing year', Math.round(r.p_loss) + '%', 'ends below the money put in', r.p_loss >= 25 ? ['bad', 'Frequent'] : r.p_loss >= 10 ? ['warn', 'Real risk'] : ['good', 'Uncommon']);
+  tile('Chance of a 20%+ drop', Math.round(r.p_dd20) + '%', `30%+ drop: ${Math.round(r.p_dd30)}% · typical worst drop ${r.med_dd.toFixed(0)}%`, r.p_dd20 >= 40 ? ['bad', 'Likely'] : r.p_dd20 >= 15 ? ['warn', 'Plausible'] : ['good', 'Uncommon']);
+  document.querySelectorAll('#edgeseg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.e === EDGE));
+  document.querySelectorAll('#sipseg button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.s === SIP));
+}
+
+function tables() {
+  const hy = $('hyears'); hy.textContent = ''; const years = Object.keys(H.realistic.years);
+  const head = document.createElement('tr'); ['Year', 'Trades', 'Headline P&L', 'Realistic P&L', 'Harsh P&L', 'Realistic avg R'].forEach((h, i) => { const th = document.createElement('th'); th.textContent = h; if (!i) th.className = 'l'; head.append(th); }); hy.append(head);
+  years.forEach(y => { const tr = document.createElement('tr'); const a = H.headline.years[y], b = H.realistic.years[y], c = H.harsh.years[y];
+    [[y, 'l'], [b.n, ''], [sinr(a.pnl), a.pnl > 0 ? 'up' : 'down'], [sinr(b.pnl), b.pnl > 0 ? 'up' : 'down'], [sinr(c.pnl), c.pnl > 0 ? 'up' : 'down'], [rr(b.avgR), b.avgR > 0 ? 'up' : 'down']]
+      .forEach(([v, cl]) => { const td = document.createElement('td'); td.textContent = v; td.className = cl; tr.append(td); }); hy.append(tr); });
+  const mt = $('mctable'); mt.textContent = '';
+  const hd = document.createElement('tr'); ['Edge assumption', 'Monthly SIP', 'Put in', 'Median end', 'Worst 5%', 'Best 5%', 'Losing year', '20%+ drop', '30%+ drop']
+    .forEach((h, i) => { const th = document.createElement('th'); th.textContent = h; if (i < 2) th.className = 'l'; hd.append(th); }); mt.append(hd);
+  for (const e of ['measured', 'half', 'none']) for (const s of [0, 500]) { const r = D.mc[`${e}_${s}`]; const tr = document.createElement('tr'); if (e === 'half') tr.className = 'hl';
+    [[EDGE_NAME[e], 'l'], [s ? inr(s) : 'none', 'l'], [inr(r.invested), ''], [inr(r.med), r.med >= r.invested ? 'up' : 'down'], [inr(r.p5), r.p5 >= r.invested ? 'up' : 'down'], [inr(r.p95), ''],
+     [Math.round(r.p_loss) + '%', ''], [Math.round(r.p_dd20) + '%', ''], [Math.round(r.p_dd30) + '%', '']]
+      .forEach(([v, cl]) => { const td = document.createElement('td'); td.textContent = v; td.className = cl; tr.append(td); }); mt.append(tr); }
+}
+
+$('h-sub').textContent = `The same ${H.realistic.n} trades, sized exactly as the bot sizes them, with every market fill (entry, stop, time exit) paying slippage and, when a candle touched both stop and target, the stop assumed first. Realistic: ${rr(H.realistic.avgR)} per trade, ${H.realistic.win.toFixed(1)}% winners, worst drawdown ${H.realistic.dd.toFixed(1)}%. Harsh: ${rr(H.harsh.avgR)}, worst drawdown ${H.harsh.dd.toFixed(1)}%.`;
+$('mc-sub').textContent = `${M.paths.toLocaleString('en-IN')} simulated years per scenario, each built by drawing trades at random from the realistic trade list above at the observed pace (about ${M.per_month.toFixed(0)} trades a month), sized on the running balance. "Half" and "zero" subtract ${(M.mean_R / 2).toFixed(3)}R / ${M.mean_R.toFixed(3)}R from every trade, which makes the expected rupee profit per trade half / exactly zero at a ₹1,500 balance (whole-lot rounding means rupee risk is not the same on every trade, so this is weighted by it). SIP is added at the start of months 2–12. Pick "half" for planning.`;
+[`Realistic costs: Delta's quoted spread is tiny (about 0.0006%), but market orders at bar close and stop orders in fast moves slip more. 0.003% per fill (about $2.5 per BTC) is a middle guess; the live-quote columns in the forward test will replace it with a measured number.`,
+ `Pessimistic fills: when one 5-minute candle touched both the stop and the target, the backtest normally follows TradingView's rule; here the stop is always assumed first.`,
+ `Half the edge: the strategy was picked from about 20 candidates, and its filters (weekdays, top 35%, 2R target, sessions) were tuned on the same history. Strategies selected this way typically deliver well under their backtest live. Halving is a rule of thumb, not a measurement.`,
+ `Zero edge: with realistic costs the measured edge is ${rr(M.plain_R)} per trade ± ${M.se.toFixed(3)}R (one standard error), so zero is only about ${(M.plain_R / M.se).toFixed(1)} standard errors away: quite plausible. This shows what an unlucky or faded edge costs.`,
+ `Bootstrap limits: drawing trades independently ignores streaks, regime changes and correlated bad weeks, so real drawdowns can be deeper than shown. The fee-free rule is assumed to continue; without it the strategy loses about 0.4R per trade (see the backtest page).`
+].forEach(s => { const li = document.createElement('li'); li.textContent = s; $('why').append(li); });
+
+function render() { histChart(); fanChart(); tables(); }
+document.querySelectorAll('#edgeseg button').forEach(b => b.addEventListener('click', () => { EDGE = b.dataset.e; fanChart(); }));
+document.querySelectorAll('#sipseg button').forEach(b => b.addEventListener('click', () => { SIP = +b.dataset.s; fanChart(); }));
+render();
+let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 150); });
+$('theme').addEventListener('click', () => { const r = document.documentElement; const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark ? 'light' : 'dark'; render(); });
+</script>
+</body>
+</html>

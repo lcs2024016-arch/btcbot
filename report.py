@@ -58,7 +58,7 @@ def _axes(th, w=9.0, h=3.2):
 
 def _save(fig, name, mode):
     fig.tight_layout()
-    fig.savefig(os.path.join(CH, f"{name}_{mode}.svg"), facecolor=fig.get_facecolor())
+    fig.savefig(os.path.join(CH, f"{name}_{mode}.svg"), facecolor=fig.get_facecolor(), metadata={"Date": None})
     plt.close(fig)
 
 

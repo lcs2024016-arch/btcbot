@@ -33,6 +33,7 @@ jobs:
           python report.py
           python research/backtest50_report.py
           python research/leverage_report.py
+          python research/realistic_report.py
       - name: Commit
         run: |
           git config user.name "forward-test-bot"

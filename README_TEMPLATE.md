@@ -11,6 +11,7 @@ every trade.
 > guarantee future returns. Read [Limitations](#limitations) before trusting any number here.
 
 **Reports** (open in a browser once GitHub Pages is enabled, see [Repository layout](#repository-layout)):
+[realistic equity outlook (start here)](https://10vulture1005.github.io/btcbot/realistic.html) ·
 [backtest at the bot's settings + monthly SIP](https://10vulture1005.github.io/btcbot/backtest_50x.html) ·
 [what 100x / 200x leverage does](https://10vulture1005.github.io/btcbot/leverage.html)
 
@@ -113,7 +114,7 @@ Strategy Tester: IST sessions, Monday–Friday, 25-minute exit, 1% risk sizing, 
 | `model/` | Live model, its cutoff, walk-forward trades and summary |
 | `state/` | Forward-test log: `trades.csv`, `signals.csv`, `runs.csv`, `state.json` |
 | `data/5m/` | Binance BTCUSDT 5-minute history, one file per month |
-| `research/` | Leverage study and the 50x/SIP backtest page (`templates/` holds the HTML) |
+| `research/` | Leverage study, the 50x/SIP backtest page and the realistic outlook (`templates/` holds the HTML) |
 | `docs/` | The HTML reports. Enable **Settings → Pages → Deploy from branch → `main` / `docs`** to view them at `https://10vulture1005.github.io/btcbot/` |
 | `tests/` | Bot-vs-backtest parity, live-quote path, SIP maths |
 | `pine/` | TradingView version (No-ML rules) |
@@ -127,6 +128,7 @@ Run locally: `pip install -r requirements.txt`, then
 | `python train.py --walkforward` | Update data, re-run the walk-forward backtest, retrain |
 | `python research/backtest50_report.py` | Rebuild `docs/backtest_50x.html` |
 | `python research/leverage_report.py` | Rebuild `docs/leverage.html` |
+| `python research/realistic_report.py` | Rebuild `docs/realistic.html` (realistic costs + 12-month outlook) |
 | `python tests/test_parity.py 2026-09-01 2026-09-27` | Bot vs backtest on history |
 | `python tests/test_live_path.py 2026-09-01 2026-09-27` | Live-quote code path on history |
 | `node tests/test_sip.js` | SIP maths in the page vs Python |
