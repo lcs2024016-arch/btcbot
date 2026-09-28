@@ -60,7 +60,8 @@ The gap between the two is the slippage the backtest cannot see.
 | Capital | ₹1,500 per paper account (USD/INR fixed at ₹85 by Delta India) |
 | Risk | whole lots for 1% of equity; 1 lot if that rounds to 0 but risks ≤ 2%, otherwise skip |
 | Fees | 0 (every trade closes within 30 min); standard 0.02% maker / 0.05% taker otherwise |
-| Leverage | 1 lot ≈ $80 notional ≈ 4–5× on ₹1,500; Delta allows up to 200× |
+| Margin | **50× cross margin**. 1 lot locks ≈ ₹125; liquidation stays ≥ 20% away vs a ~0.27% stop. Lots are capped so liquidation is always ≥ 2× farther than the stop. |
+| Why not 100×/200× | At fixed 1% risk, leverage changes the margin locked, not profit: 50×, 100× and 200× cross give the same ₹1,500 → ₹2,789 (2024–26 backtest). 200× **isolated** liquidates after a 0.25% move, closer than most stops: ₹890 with 69 liquidations. Using the leverage for bigger positions (all-in 100×/200×) wiped the account within weeks. |
 
 ## Pine Script (TradingView)
 

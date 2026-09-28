@@ -32,6 +32,13 @@ USDINR = 85.0               # Delta India's fixed conversion rate
 CAPITAL_INR = 1500.0
 RISK_PCT = 1.0              # target risk per trade
 MAX_RISK_PCT = 2.0          # if 1 contract risks more than this, skip the trade
+# Margin (from leverage_report.html): leverage does not change P&L at fixed 1% risk, only the margin locked.
+# 50x cross is the lowest setting that never caps the lot count; cross margin backs the position with the
+# whole balance, so liquidation stays far beyond the stop. Isolated 200x liquidated 69 of 379 trades.
+LEVERAGE = 50
+MARGIN_MODE = "cross"
+MAINT_MARGIN = 0.0025       # Delta BTCUSD maintenance margin (0.25% of notional)
+LIQ_SAFETY = 2.0            # liquidation must be >= 2x farther than the stop, else fewer lots
 LGB = dict(objective="binary", learning_rate=0.03, n_estimators=300, num_leaves=15, min_child_samples=200,
            subsample=0.7, subsample_freq=1, colsample_bytree=0.7, reg_lambda=10.0, verbose=-1)
 KEEP = 0.35                 # trade the model's top 35% of signals
@@ -327,14 +334,26 @@ def round_tick(px):
     return np.round(np.asarray(px, float) / TICK) * TICK
 
 
+def liq_distance(n, price, equity_inr):
+    """Adverse move (fraction of price) that liquidates n lots at `price` (Delta: margin - maintenance)."""
+    notional = n * CONTRACT_BTC * price
+    margin = equity_inr / USDINR if MARGIN_MODE == "cross" else notional / LEVERAGE
+    return (margin - MAINT_MARGIN * notional) / notional
+
+
 def contracts(equity_inr, e, sl):
-    """Whole contracts for RISK_PCT of equity; 1 contract if that rounds to 0 but stays <= MAX_RISK_PCT."""
+    """Whole contracts for RISK_PCT of equity; 1 contract if that rounds to 0 but stays <= MAX_RISK_PCT.
+    Capped by the margin available at LEVERAGE and so that liquidation sits >= LIQ_SAFETY x the stop distance."""
     risk_1 = CONTRACT_BTC * abs(e - sl) * USDINR                   # INR lost per contract at the stop
     if risk_1 <= 0 or equity_inr <= 0:
         return 0
     n = int(equity_inr * RISK_PCT / 100 // risk_1)
     if n == 0 and risk_1 <= equity_inr * MAX_RISK_PCT / 100:
         n = 1
+    n = min(n, int(equity_inr / USDINR * LEVERAGE // (CONTRACT_BTC * e)))
+    stop_dist = abs(e - sl) / e
+    while n > 0 and liq_distance(n, e, equity_inr) < LIQ_SAFETY * stop_dist:
+        n -= 1
     return n
 
 

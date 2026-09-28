@@ -6,12 +6,12 @@
 //@version=5
 // initial_capital 17.65 USD = Rs 1,500 at Delta India's fixed Rs 85 / USD
 // commission 0: every trade closes within 30 min, which Delta India does not charge
-// margin 1% (100x) so 1%-risk sizing with tight stops is not cut down by the margin check
+// margin 2% = 50x (as the bot, cross margin): enough that 1%-risk sizing is never cut down by the margin check
 strategy("9/15 EMA Scalper v3 - London/NY IST", "9-15 EMA v3 IST", overlay=true, max_labels_count=500,
          initial_capital=17.65, currency=currency.USD,
          default_qty_type=strategy.fixed, default_qty_value=0.001,
          commission_type=strategy.commission.percent, commission_value=0.0,
-         slippage=0, pyramiding=0, margin_long=1, margin_short=1,
+         slippage=0, pyramiding=0, margin_long=2, margin_short=2,
          process_orders_on_close=false)
 
 //========================

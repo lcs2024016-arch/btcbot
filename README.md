@@ -33,7 +33,7 @@ Walk-forward 2021-01 → 2026-09: the model is retrained every month on past dat
 | Backtest | Trades | Per month | Win rate | Avg R | Profit factor | ₹1,500 → | Max DD |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | ML filter (top 35%), Jan 2024 → | 501 | 15 | 52.5% | +0.11R | 1.22 | ₹2,789 | 12.4% |
-| No ML (Pine rules), Jan 2024 → | 1357 | 41 | 43.8% | +0.05R | 1.09 | ₹2,875 | 25.1% |
+| No ML (Pine rules), Jan 2024 → | 1357 | 41 | 43.8% | +0.05R | 1.09 | ₹2,875 | 25.9% |
 | ML filter (top 35%), Jan 2021 → | 1015 | 15 | 53.8% | +0.16R | 1.34 | ₹4,558 | 15.2% |
 | No ML (Pine rules), Jan 2021 → | 2860 | 42 | 44.6% | +0.09R | 1.17 | ₹10,588 | 34.2% |
 
@@ -83,7 +83,8 @@ The gap between the two is the slippage the backtest cannot see.
 | Capital | ₹1,500 per paper account (USD/INR fixed at ₹85 by Delta India) |
 | Risk | whole lots for 1% of equity; 1 lot if that rounds to 0 but risks ≤ 2%, otherwise skip |
 | Fees | 0 (every trade closes within 30 min); standard 0.02% maker / 0.05% taker otherwise |
-| Leverage | 1 lot ≈ $80 notional ≈ 4–5× on ₹1,500; Delta allows up to 200× |
+| Margin | **50× cross margin**. 1 lot locks ≈ ₹125; liquidation stays ≥ 20% away vs a ~0.27% stop. Lots are capped so liquidation is always ≥ 2× farther than the stop. |
+| Why not 100×/200× | At fixed 1% risk, leverage changes the margin locked, not profit: 50×, 100× and 200× cross give the same ₹1,500 → ₹2,789 (2024–26 backtest). 200× **isolated** liquidates after a 0.25% move, closer than most stops: ₹890 with 69 liquidations. Using the leverage for bigger positions (all-in 100×/200×) wiped the account within weeks. |
 
 ## Pine Script (TradingView)
 

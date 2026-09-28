@@ -17,6 +17,7 @@ Sessions (entries): London 08:00-12:00 UTC = 13:30-17:30 IST, New York 13:00-17:
 Monday-Friday only. Every position is closed 25 min after entry, so every trade is fee-free on Delta (< 30 min).
 Sizing: Delta India BTCUSD, 1 contract = 0.001 BTC, whole contracts for 1% risk of the INR paper account
 (start Rs 1,500, USD/INR fixed at 85); 1 contract minimum unless that risks > 2%, then the trade is skipped.
+Margin: 50x cross (strategy.LEVERAGE / MARGIN_MODE); lots are capped so liquidation is >= 2x the stop distance.
 Missed bars (late GitHub start, crash) are caught up from candles and flagged mode=catchup.
 """
 import argparse
@@ -40,7 +41,7 @@ POLL_S = 1.0
 TRADE_COLS = ["account", "mode", "source", "session", "signal_time", "entry_time", "exit_time", "dir", "kind", "p",
               "cut", "e", "sl", "stop", "tgt", "entry_px", "exit_px", "how", "R", "live_entry", "live_exit",
               "live_how", "R_live", "latency_s", "contracts", "pnl_inr", "equity_inr", "pnl_inr_live",
-              "equity_inr_live"]
+              "equity_inr_live", "leverage", "margin_inr", "liq_dist_pct"]
 
 
 def now_utc():
@@ -326,11 +327,14 @@ class Bot:
             r = ok.iloc[0]
             n = S.contracts(a.equity, r.e, r.sl)
             if n == 0:
-                log(f"{name.upper():4s} skip: 1 contract would risk more than {S.MAX_RISK_PCT}% of Rs {a.equity:,.0f}")
+                log(f"{name.upper():4s} skip: 1 lot would risk more than {S.MAX_RISK_PCT}% of Rs {a.equity:,.0f} "
+                    f"or exceed {S.LEVERAGE}x {S.MARGIN_MODE} margin")
                 continue
             a.pending = dict(signal_time=str(t), session=r.session, dir=int(r.dir), kind=S.PRIO[int(r.prio)],
                              p=float(r.p), cut=self.model.cut, e=float(r.e), sl=float(r.sl),
                              stop=float(S.round_tick(r.stop)), tgt=float(S.round_tick(r.tgt)), contracts=n,
+                             margin_inr=n * S.CONTRACT_BTC * float(r.e) / S.LEVERAGE * S.USDINR,
+                             liq_dist_pct=S.liq_distance(n, float(r.e), a.equity) * 100,
                              latency_s=latency,
                              mode=self.mode if not (self.mode == "live" and not live) else "catchup")
             taken[name] = int(r.prio)
@@ -340,7 +344,8 @@ class Bot:
                 self.shadows.append(dict(account=name, signal_time=str(t), dir=int(r.dir),
                                          stop=a.pending["stop"], tgt=a.pending["tgt"], entry=a.pending["live_entry"],
                                          deadline=str(t + BAR * (S.CAP + 2)), exit=None, how=None))
-            log(f"{name.upper():4s} {'LONG' if r.dir == 1 else 'SHORT'} {n} contract(s) {S.PRIO[int(r.prio)]} "
+            log(f"{name.upper():4s} {'LONG' if r.dir == 1 else 'SHORT'} {n} lot(s) @ {S.LEVERAGE}x {S.MARGIN_MODE} "
+                f"(margin Rs {a.pending['margin_inr']:,.0f}, liq {a.pending['liq_dist_pct']:.1f}% away) {S.PRIO[int(r.prio)]} "
                 f"p={r.p:.3f} (cut {self.model.cut:.3f}) stop {a.pending['stop']:.1f} tp {a.pending['tgt']:.1f} "
                 f"[{r.session}, {ist(t + BAR)}]")
         for r in c.itertuples():
@@ -370,7 +375,9 @@ class Bot:
                    kind=p["kind"], p=p["p"], cut=p["cut"], e=p["e"], sl=p["sl"], stop=p["stop"], tgt=p["tgt"],
                    entry_px=p["entry_px"], exit_px=px, how=S.HOW[how], R=R, live_entry=p.get("live_entry", np.nan),
                    live_exit=live_exit, live_how=live_how, R_live=R_live, latency_s=p.get("latency_s", np.nan),
-                   contracts=n, pnl_inr=pl, equity_inr=a.equity, pnl_inr_live=np.nan, equity_inr_live=np.nan)
+                   contracts=n, pnl_inr=pl, equity_inr=a.equity, pnl_inr_live=np.nan, equity_inr_live=np.nan,
+                   leverage=f"{S.LEVERAGE}x {S.MARGIN_MODE}", margin_inr=p.get("margin_inr", np.nan),
+                   liq_dist_pct=p.get("liq_dist_pct", np.nan))
         if not np.isnan(R_live):
             self.book_live(a, row, sh["entry"], live_exit)
         if sh is None or sh.get("exit") is not None or not np.isnan(R_live) or "live_entry" not in p:
