@@ -7,3 +7,4 @@ time,session,kind,dir,p,cut,ml_pass,taken_ml,taken_base
 2026-10-01 13:55:00+00:00,New York,FVG long,1,0.4518,0.442,True,True,True
 2026-10-01 14:10:00+00:00,New York,FVG long,1,0.4015,0.442,False,False,True
 2026-10-01 14:15:00+00:00,New York,normal long,1,0.4509,0.442,True,True,True
+2026-10-01 15:10:00+00:00,New York,normal long,1,0.5242,0.442,True,True,True
