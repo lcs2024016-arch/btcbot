@@ -5,7 +5,7 @@ Paper-trading forward test of the **"9/15 EMA Scalper Strategy v3"** (TradingVie
 highest-probability 35% of signals. Runs automatically on GitHub Actions and rewrites this page after
 every trade.
 
-**Mode:** paper trading · **Last update:** 30 Sep 2026, 23:00 IST · **Data:** delta:BTCUSD · **Model:** trained 2026-10-01, cut p ≥ 0.442 · **Open positions:** none
+**Mode:** paper trading · **Last update:** 01 Oct 2026, 20:20 IST · **Data:** delta:BTCUSD · **Model:** trained 2026-10-01, cut p ≥ 0.442 · **Open positions:** none
 
 > ⚠️ Paper trading only. No orders are sent to any exchange. Past and simulated results do not
 > guarantee future returns. Read [Limitations](#limitations) before trusting any number here.
@@ -28,22 +28,38 @@ fee-free rule (closed within 30 minutes).
 
 ## Forward test
 
-Paper trading since **30 Sep 2026, 14:25 IST** · last trade closed 30 Sep 2026, 22:40 IST · start capital ₹1,500 per account
+Paper trading since **30 Sep 2026, 14:25 IST** · last trade closed 01 Oct 2026, 20:15 IST · start capital ₹1,500 per account
 
 | Account | Trades | Win rate | Avg R | Profit factor | P&L | Equity | Max DD | Avg R @ live prices | P&L @ live prices |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| ML filter (top 35%) | 0 | – | – | – | ₹0.00 | ₹1,500.00 | 0.0% | – | – |
-| No ML (Pine rules) | 4 | 25.0% | -0.49R | 0.15 | -₹17.00 | ₹1,483.00 | 1.1% | -0.32R | -₹2.81 |
+| ML filter (top 35%) | 2 | 50.0% | -0.99R | 0.11 | -₹19.34 | ₹1,480.66 | 1.6% | – | – |
+| No ML (Pine rules) | 7 | 42.9% | -0.38R | 0.42 | -₹19.42 | ₹1,480.58 | 2.7% | -0.32R | -₹2.81 |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="charts/forward_equity_dark.svg">
   <img alt="Forward test equity" src="charts/forward_equity_light.svg">
 </picture>
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="charts/forward_daily_dark.svg">
+  <img alt="ML daily P&L" src="charts/forward_daily_light.svg">
+</picture>
+
+#### ML account by session
+
+| Session | Trades | Win rate | Avg R | Profit factor | P&L | Equity* | Max DD* |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| London (13:30–17:30 IST) | 0 | – | – | – | ₹0.00 | ₹1,500.00 | 0.0% |
+| New York (18:30–22:30 IST) | 2 | 50.0% | -0.99R | 0.11 | -₹19.34 | ₹1,480.66 | 1.6% |
+
+<sub>* as if the session were traded on its own</sub>
+
 #### Latest trades (ML account)
 
 | Entry (IST) | Session | Side | Type | p(win) | Lots | Entry | Stop | TP | Exit | Exit reason | R | P&L | R @ live |
 | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 01 Oct 2026, 19:50 | New York | Long | normal | 0.45 | 1 | 83,939.0 | 83,755.0 | 84,324.5 | 83,988.0 | time exit | +0.26R | +₹4.17 | – |
+| 01 Oct 2026, 19:30 | New York | Long | FVG | 0.45 | 1 | 83,904.0 | 83,627.5 | 83,996.0 | 83,627.5 | stop | -2.24R | -₹23.50 | – |
 
 
 ## Backtest reference (what the forward test should look like)
