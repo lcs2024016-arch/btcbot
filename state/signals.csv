@@ -27,3 +27,4 @@ time,session,kind,dir,p,cut,ml_pass,taken_ml,taken_base
 2026-10-09 09:45:00+00:00,London,normal long,1,0.3352,0.442,False,False,True
 2026-10-09 11:35:00+00:00,London,FVG long,1,0.4219,0.442,False,False,True
 2026-10-09 13:15:00+00:00,New York,normal long,1,0.3339,0.442,False,False,True
+2026-10-13 08:00:00+00:00,London,normal long,1,0.3617,0.442,False,False,True
