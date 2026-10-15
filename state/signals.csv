@@ -32,3 +32,6 @@ time,session,kind,dir,p,cut,ml_pass,taken_ml,taken_base
 2026-10-14 15:30:00+00:00,New York,normal short,-1,0.4168,0.442,False,False,True
 2026-10-14 15:45:00+00:00,New York,FVG short,-1,0.4312,0.442,False,False,False
 2026-10-14 16:10:00+00:00,New York,normal short,-1,0.4142,0.442,False,False,True
+2026-10-15 10:00:00+00:00,London,normal short,-1,0.4546,0.442,True,True,True
+2026-10-15 11:05:00+00:00,London,FVG short,-1,0.3925,0.442,False,False,True
+2026-10-15 11:55:00+00:00,London,normal short,-1,0.3676,0.442,False,False,True
