@@ -11,9 +11,9 @@ every trade.
 > guarantee future returns. Read [Limitations](#limitations) before trusting any number here.
 
 **Reports** (open in a browser once GitHub Pages is enabled, see [Repository layout](#repository-layout)):
-[realistic equity outlook (start here)](https://10vulture1005.github.io/btcbot/realistic.html) ·
-[backtest at the bot's settings + monthly SIP](https://10vulture1005.github.io/btcbot/backtest_50x.html) ·
-[what 100x / 200x leverage does](https://10vulture1005.github.io/btcbot/leverage.html)
+[realistic equity outlook (start here)](https://lcs2024016-arch.github.io/btcbot/realistic.html) ·
+[backtest at the bot's settings + monthly SIP](https://lcs2024016-arch.github.io/btcbot/backtest_50x.html) ·
+[what 100x / 200x leverage does](https://lcs2024016-arch.github.io/btcbot/leverage.html)
 
 ## Schedule (Indian Standard Time)
 
@@ -202,7 +202,7 @@ Strategy Tester: IST sessions, Monday–Friday, 25-minute exit, 1% risk sizing, 
 | `state/` | Forward-test log: `trades.csv`, `signals.csv`, `runs.csv`, `state.json` |
 | `data/5m/` | Binance BTCUSDT 5-minute history, one file per month |
 | `research/` | Leverage study, the 50x/SIP backtest page and the realistic outlook (`templates/` holds the HTML) |
-| `docs/` | The HTML reports. Enable **Settings → Pages → Deploy from branch → `main` / `docs`** to view them at `https://10vulture1005.github.io/btcbot/` |
+| `docs/` | The HTML reports. Enable **Settings → Pages → Deploy from branch → `main` / `docs`** to view them at `https://lcs2024016-arch.github.io/btcbot/` |
 | `tests/` | Bot-vs-backtest parity, live-quote path, SIP maths |
 | `pine/` | TradingView version (No-ML rules) |
 | `live.py`, `run_live.bat` | Live trading on Delta from your machine (see above) |

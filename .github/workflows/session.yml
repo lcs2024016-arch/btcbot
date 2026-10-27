@@ -37,8 +37,8 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Git identity
         run: |
-          git config user.name "forward-test-bot"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "lcs2024016-arch"
+          git config user.email "287223359+lcs2024016-arch@users.noreply.github.com"
       - name: Run session
         env:
           PYTHONUNBUFFERED: "1"

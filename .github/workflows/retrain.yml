@@ -36,8 +36,8 @@ jobs:
           python research/realistic_report.py
       - name: Commit
         run: |
-          git config user.name "forward-test-bot"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "lcs2024016-arch"
+          git config user.email "287223359+lcs2024016-arch@users.noreply.github.com"
           git add data model charts docs README.md
           git commit -m "monthly retrain $(TZ=Asia/Kolkata date '+%d %b %Y %H:%M IST')" || exit 0
           git pull --rebase -X theirs && git push
