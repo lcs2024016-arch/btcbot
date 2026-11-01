@@ -5,7 +5,7 @@ Paper-trading forward test of the **"9/15 EMA Scalper Strategy v3"** (TradingVie
 highest-probability 35% of signals. Runs automatically on GitHub Actions and rewrites this page after
 every trade.
 
-**Mode:** paper trading · **Last update:** 30 Oct 2026, 23:00 IST · **Data:** delta:BTCUSD · **Model:** trained 2026-10-01, cut p ≥ 0.442 · **Open positions:** none
+**Mode:** paper trading · **Last update:** 30 Oct 2026, 23:00 IST · **Data:** delta:BTCUSD · **Model:** trained 2026-11-01, cut p ≥ 0.445 · **Open positions:** none
 
 > ⚠️ Paper trading only. No orders are sent to any exchange. Past and simulated results do not
 > guarantee future returns. Read [Limitations](#limitations) before trusting any number here.
@@ -83,14 +83,14 @@ Paper trading since **30 Sep 2026, 14:25 IST** · last trade closed 30 Oct 2026,
 
 ## Backtest reference (what the forward test should look like)
 
-Walk-forward 2021-01 → 2026-09: the model is retrained every month on past data only and scores the next month. Out-of-sample AUC 0.589 (since 2024: 0.586). Same fills as the bot's candle model, zero slippage, whole Delta contracts from ₹1,500.
+Walk-forward 2021-01 → 2026-10: the model is retrained every month on past data only and scores the next month. Out-of-sample AUC 0.589 (since 2024: 0.587). Same fills as the bot's candle model, zero slippage, whole Delta contracts from ₹1,500.
 
 | Backtest | Trades | Per month | Win rate | Avg R | Profit factor | ₹1,500 → | Max DD |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| ML filter (top 35%), Jan 2024 → | 502 | 15 | 52.6% | +0.11R | 1.23 | ₹2,824 | 12.4% |
-| No ML (Pine rules), Jan 2024 → | 1365 | 41 | 43.7% | +0.05R | 1.09 | ₹2,819 | 25.9% |
-| ML filter (top 35%), Jan 2021 → | 1016 | 15 | 53.8% | +0.16R | 1.35 | ₹4,629 | 15.2% |
-| No ML (Pine rules), Jan 2021 → | 2868 | 42 | 44.6% | +0.09R | 1.17 | ₹10,374 | 34.2% |
+| ML filter (top 35%), Jan 2024 → | 525 | 16 | 53.0% | +0.11R | 1.23 | ₹2,882 | 12.4% |
+| No ML (Pine rules), Jan 2024 → | 1418 | 42 | 44.1% | +0.05R | 1.10 | ₹3,092 | 25.9% |
+| ML filter (top 35%), Jan 2021 → | 1039 | 15 | 54.0% | +0.16R | 1.34 | ₹4,716 | 15.2% |
+| No ML (Pine rules), Jan 2021 → | 2921 | 42 | 44.7% | +0.09R | 1.17 | ₹11,371 | 34.2% |
 
 | Year | ML avg R | ML win rate | No-ML avg R | No-ML win rate |
 | --- | ---: | ---: | ---: | ---: |
@@ -99,7 +99,7 @@ Walk-forward 2021-01 → 2026-09: the model is retrained every month on past dat
 | 2023 | +0.12R | 50.3% | +0.06R | 41.8% |
 | 2024 | +0.13R | 52.5% | +0.10R | 45.3% |
 | 2025 | -0.04R | 48.3% | -0.06R | 40.4% |
-| 2026 | +0.27R | 58.3% | +0.10R | 45.5% |
+| 2026 | +0.24R | 58.7% | +0.11R | 46.6% |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="charts/backtest_equity_dark.svg">
