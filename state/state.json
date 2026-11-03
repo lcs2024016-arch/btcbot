@@ -1,7 +1,7 @@
 {
- "last_bar": "2026-11-02 17:25:00+00:00",
+ "last_bar": "2026-11-03 15:40:00+00:00",
  "source": "delta:BTCUSD",
- "updated": "2026-11-02 17:30:08",
+ "updated": "2026-11-03 15:45:03",
  "accounts": {
   "ml": {
    "pos": null,
@@ -12,8 +12,8 @@
   "base": {
    "pos": null,
    "pending": null,
-   "equity": 1577.5624999999995,
-   "equity_live": 1514.8750000000005
+   "equity": 1604.0824999999995,
+   "equity_live": 1543.8600000000004
   }
  },
  "shadows": []
