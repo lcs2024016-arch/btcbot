@@ -5,7 +5,7 @@ Paper-trading forward test of the **"9/15 EMA Scalper Strategy v3"** (TradingVie
 highest-probability 35% of signals. Runs automatically on GitHub Actions and rewrites this page after
 every trade.
 
-**Mode:** paper trading · **Last update:** 03 Nov 2026, 23:00 IST · **Data:** delta:BTCUSD · **Model:** trained 2026-11-01, cut p ≥ 0.445 · **Open positions:** none
+**Mode:** paper trading · **Last update:** 04 Nov 2026, 22:10 IST · **Data:** delta:BTCUSD · **Model:** trained 2026-11-01, cut p ≥ 0.445 · **Open positions:** none
 
 > ⚠️ Paper trading only. No orders are sent to any exchange. Past and simulated results do not
 > guarantee future returns. Read [Limitations](#limitations) before trusting any number here.
@@ -28,12 +28,12 @@ fee-free rule (closed within 30 minutes).
 
 ## Forward test
 
-Paper trading since **30 Sep 2026, 14:25 IST** · last trade closed 03 Nov 2026, 21:10 IST · start capital ₹1,500 per account
+Paper trading since **30 Sep 2026, 14:25 IST** · last trade closed 04 Nov 2026, 22:05 IST · start capital ₹1,500 per account
 
 | Account | Trades | Win rate | Avg R | Profit factor | P&L | Equity | Max DD | Avg R @ live prices | P&L @ live prices |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| ML filter (top 35%) | 11 | 72.7% | +0.30R | 1.93 | +₹53.72 | ₹1,553.72 | 2.7% | +0.32R | +₹15.89 |
-| No ML (Pine rules) | 46 | 50.0% | +0.12R | 1.26 | +₹104.08 | ₹1,604.08 | 5.9% | +0.20R | +₹43.86 |
+| ML filter (top 35%) | 12 | 66.7% | +0.27R | 1.91 | +₹52.78 | ₹1,552.79 | 2.7% | +0.23R | +₹15.09 |
+| No ML (Pine rules) | 51 | 47.1% | +0.06R | 1.13 | +₹68.55 | ₹1,568.55 | 5.9% | +0.19R | +₹43.05 |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="charts/forward_equity_dark.svg">
@@ -50,7 +50,7 @@ Paper trading since **30 Sep 2026, 14:25 IST** · last trade closed 03 Nov 2026,
 | Session | Trades | Win rate | Avg R | Profit factor | P&L | Equity* | Max DD* |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | London (13:30–17:30 IST) | 6 | 83.3% | +0.71R | 14.62 | +₹55.84 | ₹1,555.85 | 0.3% |
-| New York (18:30–22:30 IST) | 5 | 60.0% | -0.19R | 0.71 | -₹2.12 | ₹1,497.88 | 2.7% |
+| New York (18:30–22:30 IST) | 6 | 50.0% | -0.16R | 0.70 | -₹3.06 | ₹1,496.94 | 2.7% |
 
 <sub>* as if the session were traded on its own</sub>
 
@@ -58,16 +58,17 @@ Paper trading since **30 Sep 2026, 14:25 IST** · last trade closed 03 Nov 2026,
 
 | Measure | Value |
 | --- | ---: |
-| Trades with live quotes | 3 |
-| Avg entry cost vs 5m open | $+1.17 per BTC (+0.14 bp) |
+| Trades with live quotes | 4 |
+| Avg entry cost vs 5m open | $+1.00 per BTC (+0.12 bp) |
 | Avg stop slippage | $+3.50 per BTC |
-| Avg decision delay after bar close | 3.2 s |
-| Avg R: candle model → live prices | +0.35R → +0.32R |
+| Avg decision delay after bar close | 3.1 s |
+| Avg R: candle model → live prices | +0.25R → +0.23R |
 
 #### Latest trades (ML account)
 
 | Entry (IST) | Session | Side | Type | p(win) | Lots | Entry | Stop | TP | Exit | Exit reason | R | P&L | R @ live |
 | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 04 Nov 2026, 21:40 | New York | Long | normal | 0.48 | 1 | 80,582.5 | 80,268.5 | 81,213.0 | 80,571.5 | time exit | -0.03R | -₹0.94 | -0.03R |
 | 30 Oct 2026, 14:45 | London | Short | FVG | 0.47 | 1 | 77,753.5 | 77,995.5 | 77,484.5 | 77,708.0 | time exit | +0.27R | +₹3.87 | – |
 | 15 Oct 2026, 15:35 | London | Short | normal | 0.45 | 2 | 81,154.5 | 81,234.0 | 80,993.0 | 80,993.0 | target | +1.99R | +₹27.45 | – |
 | 14 Oct 2026, 19:35 | New York | Short | FVG | 0.59 | 1 | 82,200.0 | 82,735.0 | 81,991.5 | 81,991.5 | target | +0.84R | +₹17.72 | +0.89R |
