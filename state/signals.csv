@@ -56,3 +56,4 @@ time,session,kind,dir,p,cut,ml_pass,taken_ml,taken_base
 2026-11-04 11:40:00+00:00,London,normal long,1,0.3233,0.4448,False,False,True
 2026-11-04 16:05:00+00:00,New York,normal long,1,0.4834,0.4448,True,True,True
 2026-11-04 16:25:00+00:00,New York,normal long,1,0.3892,0.4448,False,False,False
+2026-11-05 16:55:00+00:00,New York,normal short,-1,0.4083,0.4448,False,False,True

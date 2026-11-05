@@ -5,7 +5,7 @@ Paper-trading forward test of the **"9/15 EMA Scalper Strategy v3"** (TradingVie
 highest-probability 35% of signals. Runs automatically on GitHub Actions and rewrites this page after
 every trade.
 
-**Mode:** paper trading · **Last update:** 04 Nov 2026, 23:00 IST · **Data:** delta:BTCUSD · **Model:** trained 2026-11-01, cut p ≥ 0.445 · **Open positions:** none
+**Mode:** paper trading · **Last update:** 05 Nov 2026, 22:50 IST · **Data:** delta:BTCUSD · **Model:** trained 2026-11-01, cut p ≥ 0.445 · **Open positions:** none
 
 > ⚠️ Paper trading only. No orders are sent to any exchange. Past and simulated results do not
 > guarantee future returns. Read [Limitations](#limitations) before trusting any number here.
@@ -28,12 +28,12 @@ fee-free rule (closed within 30 minutes).
 
 ## Forward test
 
-Paper trading since **30 Sep 2026, 14:25 IST** · last trade closed 04 Nov 2026, 22:05 IST · start capital ₹1,500 per account
+Paper trading since **30 Sep 2026, 14:25 IST** · last trade closed 05 Nov 2026, 22:45 IST · start capital ₹1,500 per account
 
 | Account | Trades | Win rate | Avg R | Profit factor | P&L | Equity | Max DD | Avg R @ live prices | P&L @ live prices |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | ML filter (top 35%) | 12 | 66.7% | +0.27R | 1.91 | +₹52.78 | ₹1,552.79 | 2.7% | +0.23R | +₹15.09 |
-| No ML (Pine rules) | 51 | 47.1% | +0.06R | 1.13 | +₹68.55 | ₹1,568.55 | 5.9% | +0.19R | +₹43.05 |
+| No ML (Pine rules) | 52 | 48.1% | +0.10R | 1.22 | +₹105.40 | ₹1,605.40 | 5.9% | +0.31R | +₹79.86 |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="charts/forward_equity_dark.svg">
