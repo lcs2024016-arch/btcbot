@@ -65,3 +65,6 @@ time,session,kind,dir,p,cut,ml_pass,taken_ml,taken_base
 2026-11-12 14:45:00+00:00,New York,FVG short,-1,0.5997,0.4448,True,True,True
 2026-11-17 10:05:00+00:00,London,normal short,-1,0.3965,0.4448,False,False,True
 2026-11-17 14:00:00+00:00,New York,FVG long,1,0.4296,0.4448,False,False,True
+2026-11-18 13:50:00+00:00,New York,normal short,-1,0.4021,0.4448,False,False,True
+2026-11-18 14:20:00+00:00,New York,normal short,-1,0.3227,0.4448,False,False,True
+2026-11-18 15:20:00+00:00,New York,normal short,-1,0.4689,0.4448,True,True,True
